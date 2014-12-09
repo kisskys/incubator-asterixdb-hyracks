@@ -203,7 +203,7 @@ public class RTreePolicy implements IRTreePolicy {
     @Override
     public int findBestChildPosition(ITreeIndexFrame frame, ITupleReference tuple, ITreeIndexTupleReference frameTuple,
             MultiComparator cmp) {
-        cmpFrameTuple.setFieldCount(cmp.getKeyFieldCount());
+        cmpFrameTuple.setFieldCount(cmp.getKeyFieldCount());  
         frameTuple.setFieldCount(cmp.getKeyFieldCount());
 
         int bestChild = 0;

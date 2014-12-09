@@ -41,6 +41,7 @@ public class LSMRTreeWithAntiMatterTuplesDataflowHelperFactory extends AbstractL
     private final RTreePolicyType rtreePolicyType;
     private final ILinearizeComparatorFactory linearizeCmpFactory;
     private final int[] rtreeFields;
+    private final boolean isPointMBR;
 
     public LSMRTreeWithAntiMatterTuplesDataflowHelperFactory(IPrimitiveValueProviderFactory[] valueProviderFactories,
             RTreePolicyType rtreePolicyType, IBinaryComparatorFactory[] btreeComparatorFactories,
@@ -48,7 +49,7 @@ public class LSMRTreeWithAntiMatterTuplesDataflowHelperFactory extends AbstractL
             Map<String, String> mergePolicyProperties, ILSMOperationTrackerProvider opTrackerFactory,
             ILSMIOOperationSchedulerProvider ioSchedulerProvider, ILSMIOOperationCallbackFactory ioOpCallbackFactory,
             ILinearizeComparatorFactory linearizeCmpFactory, int[] rtreeFields, ITypeTraits[] filterTypeTraits,
-            IBinaryComparatorFactory[] filterCmpFactories, int[] filterFields) {
+            IBinaryComparatorFactory[] filterCmpFactories, int[] filterFields, boolean isPointMBR) {
         super(virtualBufferCacheProvider, mergePolicyFactory, mergePolicyProperties, opTrackerFactory,
                 ioSchedulerProvider, ioOpCallbackFactory, 1.0, filterTypeTraits, filterCmpFactories, filterFields);
         this.btreeComparatorFactories = btreeComparatorFactories;
@@ -56,6 +57,7 @@ public class LSMRTreeWithAntiMatterTuplesDataflowHelperFactory extends AbstractL
         this.rtreePolicyType = rtreePolicyType;
         this.linearizeCmpFactory = linearizeCmpFactory;
         this.rtreeFields = rtreeFields;
+        this.isPointMBR = isPointMBR;
     }
 
     @Override
@@ -65,6 +67,6 @@ public class LSMRTreeWithAntiMatterTuplesDataflowHelperFactory extends AbstractL
                 virtualBufferCacheProvider.getVirtualBufferCaches(ctx), btreeComparatorFactories,
                 valueProviderFactories, rtreePolicyType, mergePolicyFactory.createMergePolicy(mergePolicyProperties,
                         ctx), opTrackerFactory, ioSchedulerProvider.getIOScheduler(ctx), ioOpCallbackFactory,
-                linearizeCmpFactory, rtreeFields, filterTypeTraits, filterCmpFactories, filterFields);
+                linearizeCmpFactory, rtreeFields, filterTypeTraits, filterCmpFactories, filterFields, isPointMBR);
     }
 }

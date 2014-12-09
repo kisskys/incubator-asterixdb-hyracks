@@ -1,7 +1,9 @@
 package edu.uci.ics.hyracks.algebricks.core.algebra.operators.physical;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang3.mutable.Mutable;
 
@@ -61,6 +63,8 @@ public class IndexBulkloadPOperator extends AbstractPhysicalOperator {
     @Override
     public PhysicalRequirements getRequiredPropertiesForChildren(ILogicalOperator op,
             IPhysicalPropertiesVector reqdByParent) {
+        //skVarMap is used to remove duplicated variable references for order operator
+        Map<Integer, Object> skVarMap = new HashMap<Integer, Object>();
         List<LogicalVariable> scanVariables = new ArrayList<>();
         scanVariables.addAll(primaryKeys);
         scanVariables.add(new LogicalVariable(-1));
@@ -70,12 +74,13 @@ public class IndexBulkloadPOperator extends AbstractPhysicalOperator {
         // Data needs to be sorted based on the [token, number of token, PK]
         // OR [token, PK] if the index is not partitioned
         for (LogicalVariable skVar : secondaryKeys) {
-            localProperties.add(new LocalOrderProperty(new OrderColumn(skVar,
-                    OrderKind.ASC)));
+            if (!skVarMap.containsKey(skVar.getId())) { 
+                localProperties.add(new LocalOrderProperty(new OrderColumn(skVar, OrderKind.ASC)));
+                skVarMap.put(skVar.getId(), null);
+            }
         }
         for (LogicalVariable pkVar : primaryKeys) {
-            localProperties.add(new LocalOrderProperty(new OrderColumn(pkVar,
-                    OrderKind.ASC)));
+            localProperties.add(new LocalOrderProperty(new OrderColumn(pkVar, OrderKind.ASC)));
         }
         StructuralPropertiesVector spv = new StructuralPropertiesVector(physicalProps.getPartitioningProperty(),
                 localProperties);
@@ -121,6 +126,5 @@ public class IndexBulkloadPOperator extends AbstractPhysicalOperator {
     public boolean expensiveThanMaterialization() {
         return false;
     }
-
 
 }

@@ -25,8 +25,8 @@ import edu.uci.ics.hyracks.storage.am.rtree.api.IRTreeLeafFrame;
 public class RTreeNSMLeafFrame extends RTreeNSMFrame implements IRTreeLeafFrame {
 
     public RTreeNSMLeafFrame(ITreeIndexTupleWriter tupleWriter, IPrimitiveValueProvider[] keyValueProviders,
-            RTreePolicyType rtreePolicyType) {
-        super(tupleWriter, keyValueProviders, rtreePolicyType);
+            RTreePolicyType rtreePolicyType, boolean isPointMBR) {
+        super(tupleWriter, keyValueProviders, rtreePolicyType, isPointMBR);
     }
 
     @Override
