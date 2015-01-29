@@ -13,26 +13,24 @@
  * limitations under the License.
  */
 
-package edu.uci.ics.hyracks.storage.am.lsm.invertedindex.tokenizers;
+package edu.uci.ics.hyracks.storage.am.common.tokenizer;
 
-public class DelimitedUTF8StringBinaryTokenizerFactory implements
-		IBinaryTokenizerFactory {
+import edu.uci.ics.hyracks.storage.am.common.api.IToken;
+
+public class HashedUTF8WordTokenFactory extends AbstractUTF8TokenFactory {
 
 	private static final long serialVersionUID = 1L;
-	private final boolean ignoreTokenCount;
-	private final boolean sourceHasTypeTag;
-	private final ITokenFactory tokenFactory;
 
-	public DelimitedUTF8StringBinaryTokenizerFactory(boolean ignoreTokenCount,
-			boolean sourceHasTypeTag, ITokenFactory tokenFactory) {
-		this.ignoreTokenCount = ignoreTokenCount;
-		this.sourceHasTypeTag = sourceHasTypeTag;
-		this.tokenFactory = tokenFactory;
+	public HashedUTF8WordTokenFactory() {
+		super();
+	}
+
+	public HashedUTF8WordTokenFactory(byte tokenTypeTag, byte countTypeTag) {
+		super(tokenTypeTag, countTypeTag);
 	}
 
 	@Override
-	public IBinaryTokenizer createTokenizer() {
-		return new DelimitedUTF8StringBinaryTokenizer(ignoreTokenCount,
-				sourceHasTypeTag, tokenFactory);
+	public IToken createToken() {
+		return new HashedUTF8WordToken(tokenTypeTag, countTypeTag);
 	}
 }

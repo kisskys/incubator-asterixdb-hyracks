@@ -18,6 +18,7 @@ import java.util.List;
 
 import edu.uci.ics.hyracks.api.context.IHyracksTaskContext;
 import edu.uci.ics.hyracks.api.exceptions.HyracksDataException;
+import edu.uci.ics.hyracks.storage.am.common.api.IBinaryTokenizerFactory;
 import edu.uci.ics.hyracks.storage.am.common.api.IIndex;
 import edu.uci.ics.hyracks.storage.am.common.api.ITreeIndex;
 import edu.uci.ics.hyracks.storage.am.common.dataflow.AbstractTreeIndexOperatorDescriptor;
@@ -36,18 +37,18 @@ public class ExternalBTreeDataflowHelper extends LSMBTreeDataflowHelper {
     public ExternalBTreeDataflowHelper(IIndexOperatorDescriptor opDesc, IHyracksTaskContext ctx, int partition,
             double bloomFilterFalsePositiveRate, ILSMMergePolicy mergePolicy,
             ILSMOperationTrackerProvider opTrackerFactory, ILSMIOOperationScheduler ioScheduler,
-            ILSMIOOperationCallbackFactory ioOpCallbackFactory, boolean needKeyDupCheck, int version) {
+            ILSMIOOperationCallbackFactory ioOpCallbackFactory, boolean needKeyDupCheck, int version, IBinaryTokenizerFactory tokenizerFactory) {
         super(opDesc, ctx, partition, null, bloomFilterFalsePositiveRate, mergePolicy, opTrackerFactory, ioScheduler,
-                ioOpCallbackFactory, false, null, null, null, null);
+                ioOpCallbackFactory, false, null, null, null, null, tokenizerFactory);
         this.version = version;
     }
 
     public ExternalBTreeDataflowHelper(IIndexOperatorDescriptor opDesc, IHyracksTaskContext ctx, int partition,
             List<IVirtualBufferCache> virtualBufferCaches, ILSMMergePolicy mergePolicy,
             ILSMOperationTrackerProvider opTrackerFactory, ILSMIOOperationScheduler ioScheduler,
-            ILSMIOOperationCallbackFactory ioOpCallbackFactory, boolean needKeyDupCheck, int version) {
+            ILSMIOOperationCallbackFactory ioOpCallbackFactory, boolean needKeyDupCheck, int version, IBinaryTokenizerFactory tokenizerFactory) {
         this(opDesc, ctx, partition, DEFAULT_BLOOM_FILTER_FALSE_POSITIVE_RATE, mergePolicy, opTrackerFactory,
-                ioScheduler, ioOpCallbackFactory, needKeyDupCheck, version);
+                ioScheduler, ioOpCallbackFactory, needKeyDupCheck, version, tokenizerFactory);
     }
 
     @Override
@@ -77,7 +78,7 @@ public class ExternalBTreeDataflowHelper extends LSMBTreeDataflowHelper {
                 .getStorageManager().getFileMapProvider(ctx), treeOpDesc.getTreeIndexTypeTraits(), treeOpDesc
                 .getTreeIndexComparatorFactories(), treeOpDesc.getTreeIndexBloomFilterKeyFields(),
                 bloomFilterFalsePositiveRate, mergePolicy, opTrackerFactory.getOperationTracker(ctx), ioScheduler,
-                ioOpCallbackFactory.createIOOperationCallback(), getVersion());
+                ioOpCallbackFactory.createIOOperationCallback(), getVersion(), tokenizerFactory);
     }
 
     public int getVersion() {

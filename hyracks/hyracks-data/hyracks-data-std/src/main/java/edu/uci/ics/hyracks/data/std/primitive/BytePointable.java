@@ -15,6 +15,7 @@
 package edu.uci.ics.hyracks.data.std.primitive;
 
 import edu.uci.ics.hyracks.api.dataflow.value.ITypeTraits;
+import edu.uci.ics.hyracks.data.std.accessors.CollationType;
 import edu.uci.ics.hyracks.data.std.api.AbstractPointable;
 import edu.uci.ics.hyracks.data.std.api.IComparable;
 import edu.uci.ics.hyracks.data.std.api.IHashable;
@@ -85,9 +86,14 @@ public final class BytePointable extends AbstractPointable implements IHashable,
     public int compareTo(IPointable pointer) {
         return compareTo(pointer.getByteArray(), pointer.getStartOffset(), pointer.getLength());
     }
-
+    
     @Override
     public int compareTo(byte[] bytes, int start, int length) {
+        return compareTo(bytes, start, length, CollationType.DEFAULT);
+    }
+
+    @Override
+    public int compareTo(byte[] bytes, int start, int length, CollationType ct) {
         byte b = getByte();
         byte ob = getByte(bytes, start);
         return b < ob ? -1 : (b > ob ? 1 : 0);

@@ -21,6 +21,7 @@ import edu.uci.ics.hyracks.api.context.IHyracksTaskContext;
 import edu.uci.ics.hyracks.api.dataflow.value.IBinaryComparatorFactory;
 import edu.uci.ics.hyracks.api.dataflow.value.ITypeTraits;
 import edu.uci.ics.hyracks.api.exceptions.HyracksDataException;
+import edu.uci.ics.hyracks.storage.am.common.api.IBinaryTokenizerFactory;
 import edu.uci.ics.hyracks.storage.am.common.api.ITreeIndex;
 import edu.uci.ics.hyracks.storage.am.common.dataflow.AbstractTreeIndexOperatorDescriptor;
 import edu.uci.ics.hyracks.storage.am.common.dataflow.IIndexOperatorDescriptor;
@@ -36,16 +37,17 @@ public class LSMBTreeDataflowHelper extends AbstractLSMIndexDataflowHelper {
 
     private final boolean needKeyDupCheck;
     private final int[] btreeFields;
+    protected final IBinaryTokenizerFactory tokenizerFactory;
 
     public LSMBTreeDataflowHelper(IIndexOperatorDescriptor opDesc, IHyracksTaskContext ctx, int partition,
             List<IVirtualBufferCache> virtualBufferCaches, ILSMMergePolicy mergePolicy,
             ILSMOperationTrackerProvider opTrackerFactory, ILSMIOOperationScheduler ioScheduler,
             ILSMIOOperationCallbackFactory ioOpCallbackFactory, boolean needKeyDupCheck,
             ITypeTraits[] filterTypeTraits, IBinaryComparatorFactory[] filterCmpFactories, int[] btreeFields,
-            int[] filterFields) {
+            int[] filterFields, IBinaryTokenizerFactory tokenizerFactory) {
         this(opDesc, ctx, partition, virtualBufferCaches, DEFAULT_BLOOM_FILTER_FALSE_POSITIVE_RATE, mergePolicy,
                 opTrackerFactory, ioScheduler, ioOpCallbackFactory, needKeyDupCheck, filterTypeTraits,
-                filterCmpFactories, btreeFields, filterFields);
+                filterCmpFactories, btreeFields, filterFields, tokenizerFactory);
     }
 
     public LSMBTreeDataflowHelper(IIndexOperatorDescriptor opDesc, IHyracksTaskContext ctx, int partition,
@@ -53,11 +55,12 @@ public class LSMBTreeDataflowHelper extends AbstractLSMIndexDataflowHelper {
             ILSMMergePolicy mergePolicy, ILSMOperationTrackerProvider opTrackerFactory,
             ILSMIOOperationScheduler ioScheduler, ILSMIOOperationCallbackFactory ioOpCallbackFactory,
             boolean needKeyDupCheck, ITypeTraits[] filterTypeTraits, IBinaryComparatorFactory[] filterCmpFactories,
-            int[] btreeFields, int[] filterFields) {
+            int[] btreeFields, int[] filterFields, IBinaryTokenizerFactory tokenizerFactory) {
         super(opDesc, ctx, partition, virtualBufferCaches, bloomFilterFalsePositiveRate, mergePolicy, opTrackerFactory,
                 ioScheduler, ioOpCallbackFactory, filterTypeTraits, filterCmpFactories, filterFields);
         this.needKeyDupCheck = needKeyDupCheck;
         this.btreeFields = btreeFields;
+        this.tokenizerFactory = tokenizerFactory;
     }
 
     @Override
@@ -68,6 +71,6 @@ public class LSMBTreeDataflowHelper extends AbstractLSMIndexDataflowHelper {
                 treeOpDesc.getTreeIndexComparatorFactories(), treeOpDesc.getTreeIndexBloomFilterKeyFields(),
                 bloomFilterFalsePositiveRate, mergePolicy, opTrackerFactory.getOperationTracker(ctx), ioScheduler,
                 ioOpCallbackFactory.createIOOperationCallback(), needKeyDupCheck, filterTypeTraits, filterCmpFactories,
-                btreeFields, filterFields);
+                btreeFields, filterFields, tokenizerFactory);
     }
 }

@@ -17,6 +17,7 @@ package edu.uci.ics.hyracks.storage.am.lsm.btree.dataflow;
 import java.util.Map;
 
 import edu.uci.ics.hyracks.api.context.IHyracksTaskContext;
+import edu.uci.ics.hyracks.storage.am.common.api.IBinaryTokenizerFactory;
 import edu.uci.ics.hyracks.storage.am.common.api.IIndexDataflowHelper;
 import edu.uci.ics.hyracks.storage.am.common.dataflow.IIndexOperatorDescriptor;
 import edu.uci.ics.hyracks.storage.am.lsm.common.api.ILSMIOOperationCallbackFactory;
@@ -30,14 +31,17 @@ public class ExternalBTreeDataflowHelperFactory extends AbstractLSMIndexDataflow
     private static final long serialVersionUID = 1L;
 
     private int version;
+    private final IBinaryTokenizerFactory tokenizerFactory;
 
     public ExternalBTreeDataflowHelperFactory(ILSMMergePolicyFactory mergePolicyFactory,
             Map<String, String> mergePolicyProperties, ILSMOperationTrackerProvider opTrackerFactory,
             ILSMIOOperationSchedulerProvider ioSchedulerProvider, ILSMIOOperationCallbackFactory ioOpCallbackFactory,
-            double bloomFilterFalsePositiveRate, int version) {
+            double bloomFilterFalsePositiveRate, int version, IBinaryTokenizerFactory tokenizerFactory) {
         super(null, mergePolicyFactory, mergePolicyProperties, opTrackerFactory, ioSchedulerProvider,
                 ioOpCallbackFactory, bloomFilterFalsePositiveRate, null, null, null);
         this.version = version;
+        this.tokenizerFactory = tokenizerFactory;
+        
     }
 
     @Override
@@ -45,7 +49,7 @@ public class ExternalBTreeDataflowHelperFactory extends AbstractLSMIndexDataflow
             int partition) {
         return new ExternalBTreeDataflowHelper(opDesc, ctx, partition, bloomFilterFalsePositiveRate,
                 mergePolicyFactory.createMergePolicy(mergePolicyProperties, ctx), opTrackerFactory,
-                ioSchedulerProvider.getIOScheduler(ctx), ioOpCallbackFactory, false, version);
+                ioSchedulerProvider.getIOScheduler(ctx), ioOpCallbackFactory, false, version, tokenizerFactory);
     }
 
 }

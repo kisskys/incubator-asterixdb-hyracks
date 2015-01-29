@@ -27,11 +27,10 @@ import edu.uci.ics.hyracks.dataflow.common.comm.io.FrameTupleAccessor;
 import edu.uci.ics.hyracks.dataflow.common.comm.io.FrameTupleAppender;
 import edu.uci.ics.hyracks.dataflow.common.comm.util.FrameUtils;
 import edu.uci.ics.hyracks.dataflow.std.base.AbstractUnaryInputUnaryOutputOperatorNodePushable;
-import edu.uci.ics.hyracks.storage.am.lsm.invertedindex.tokenizers.IBinaryTokenizer;
-import edu.uci.ics.hyracks.storage.am.lsm.invertedindex.tokenizers.IToken;
+import edu.uci.ics.hyracks.storage.am.common.api.IBinaryTokenizer;
+import edu.uci.ics.hyracks.storage.am.common.api.IToken;
 
-public class BinaryTokenizerOperatorNodePushable extends
-        AbstractUnaryInputUnaryOutputOperatorNodePushable {
+public class BinaryTokenizerOperatorNodePushable extends AbstractUnaryInputUnaryOutputOperatorNodePushable {
 
     private final IHyracksTaskContext ctx;
     private final IBinaryTokenizer tokenizer;
@@ -41,6 +40,7 @@ public class BinaryTokenizerOperatorNodePushable extends
     private final boolean writeKeyFieldsFirst;
     private final RecordDescriptor inputRecDesc;
     private final RecordDescriptor outputRecDesc;
+    private final int numTokensPerOutputRecord;
 
     private FrameTupleAccessor accessor;
     private ArrayTupleBuilder builder;
@@ -48,10 +48,9 @@ public class BinaryTokenizerOperatorNodePushable extends
     private FrameTupleAppender appender;
     private ByteBuffer writeBuffer;
 
-    public BinaryTokenizerOperatorNodePushable(IHyracksTaskContext ctx,
-            RecordDescriptor inputRecDesc, RecordDescriptor outputRecDesc,
-            IBinaryTokenizer tokenizer, int docField, int[] keyFields,
-            boolean addNumTokensKey, boolean writeKeyFieldsFirst) {
+    public BinaryTokenizerOperatorNodePushable(IHyracksTaskContext ctx, RecordDescriptor inputRecDesc,
+            RecordDescriptor outputRecDesc, IBinaryTokenizer tokenizer, int docField, int[] keyFields,
+            boolean addNumTokensKey, boolean writeKeyFieldsFirst, int numTokensPerOutputRecord) {
         this.ctx = ctx;
         this.tokenizer = tokenizer;
         this.docField = docField;
@@ -60,6 +59,7 @@ public class BinaryTokenizerOperatorNodePushable extends
         this.inputRecDesc = inputRecDesc;
         this.outputRecDesc = outputRecDesc;
         this.writeKeyFieldsFirst = writeKeyFieldsFirst;
+        this.numTokensPerOutputRecord = numTokensPerOutputRecord;
     }
 
     @Override
@@ -84,42 +84,41 @@ public class BinaryTokenizerOperatorNodePushable extends
                 // Run through the tokens to get the total number of tokens.
                 tokenizer.reset(
                         accessor.getBuffer().array(),
-                        accessor.getTupleStartOffset(i)
-                                + accessor.getFieldSlotsLength()
-                                + accessor.getFieldStartOffset(i, docField),
-                        accessor.getFieldLength(i, docField));
+                        accessor.getTupleStartOffset(i) + accessor.getFieldSlotsLength()
+                                + accessor.getFieldStartOffset(i, docField), accessor.getFieldLength(i, docField));
                 while (tokenizer.hasNext()) {
-                    tokenizer.next();
-                    numTokens++;
+                    for (int j = 0; j < numTokensPerOutputRecord; j++) {
+                        tokenizer.next();
+                        numTokens++;
+                    }
                 }
             }
 
             tokenizer.reset(
                     accessor.getBuffer().array(),
-                    accessor.getTupleStartOffset(i)
-                            + accessor.getFieldSlotsLength()
-                            + accessor.getFieldStartOffset(i, docField),
-                    accessor.getFieldLength(i, docField));
+                    accessor.getTupleStartOffset(i) + accessor.getFieldSlotsLength()
+                            + accessor.getFieldStartOffset(i, docField), accessor.getFieldLength(i, docField));
 
             // Write token and data into frame by following the order specified
             // in the writeKeyFieldsFirst field.
             while (tokenizer.hasNext()) {
-
-                tokenizer.next();
 
                 builder.reset();
 
                 // Writing Order: token, number of token, keyfield1 ... n
                 if (!writeKeyFieldsFirst) {
                     try {
-                        IToken token = tokenizer.getToken();
-                        token.serializeToken(builderData);
-
-                        builder.addFieldEndOffset();
-                        // Add number of tokens if requested.
-                        if (addNumTokensKey) {
-                            builder.getDataOutput().writeShort(numTokens);
+                        for (int j = 0; j < numTokensPerOutputRecord; j++) {
+                            tokenizer.next();
+                            IToken token = tokenizer.getToken();
+                            token.serializeToken(builderData);
+    
                             builder.addFieldEndOffset();
+                            // Add number of tokens if requested.
+                            if (addNumTokensKey) {
+                                builder.getDataOutput().writeShort(numTokens);
+                                builder.addFieldEndOffset();
+                            }
                         }
                     } catch (IOException e) {
                         throw new HyracksDataException(e.getMessage());
@@ -138,14 +137,17 @@ public class BinaryTokenizerOperatorNodePushable extends
                     }
 
                     try {
-                        IToken token = tokenizer.getToken();
-                        token.serializeToken(builderData);
-
-                        builder.addFieldEndOffset();
-                        // Add number of tokens if requested.
-                        if (addNumTokensKey) {
-                            builder.getDataOutput().writeShort(numTokens);
+                        for (int j = 0; j < numTokensPerOutputRecord; j++) {
+                            tokenizer.next();
+                            IToken token = tokenizer.getToken();
+                            token.serializeToken(builderData);
+    
                             builder.addFieldEndOffset();
+                            // Add number of tokens if requested.
+                            if (addNumTokensKey) {
+                                builder.getDataOutput().writeShort(numTokens);
+                                builder.addFieldEndOffset();
+                            }
                         }
                     } catch (IOException e) {
                         throw new HyracksDataException(e.getMessage());
@@ -153,23 +155,18 @@ public class BinaryTokenizerOperatorNodePushable extends
 
                 }
 
-                if (!appender.append(builder.getFieldEndOffsets(),
-                        builder.getByteArray(), 0, builder.getSize())) {
+                if (!appender.append(builder.getFieldEndOffsets(), builder.getByteArray(), 0, builder.getSize())) {
                     FrameUtils.flushFrame(writeBuffer, writer);
                     appender.reset(writeBuffer, true);
 
-                    if (!appender.append(builder.getFieldEndOffsets(),
-                            builder.getByteArray(), 0, builder.getSize())) {
-                        throw new HyracksDataException("Record size ("
-                                + builder.getSize()
-                                + ") larger than frame size ("
-                                + appender.getBuffer().capacity() + ")");
+                    if (!appender.append(builder.getFieldEndOffsets(), builder.getByteArray(), 0, builder.getSize())) {
+                        throw new HyracksDataException("Record size (" + builder.getSize()
+                                + ") larger than frame size (" + appender.getBuffer().capacity() + ")");
                     }
                 }
 
-            }
-
-        }
+            }//end while
+        }//end for
 
     }
 

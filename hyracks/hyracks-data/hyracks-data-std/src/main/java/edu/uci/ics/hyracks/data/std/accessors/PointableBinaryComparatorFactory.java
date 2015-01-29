@@ -24,6 +24,7 @@ public class PointableBinaryComparatorFactory implements IBinaryComparatorFactor
     private static final long serialVersionUID = 1L;
 
     private final IPointableFactory pf;
+    private final CollationType ct;
 
     public static PointableBinaryComparatorFactory of(IPointableFactory pf) {
         return new PointableBinaryComparatorFactory(pf);
@@ -31,6 +32,16 @@ public class PointableBinaryComparatorFactory implements IBinaryComparatorFactor
 
     public PointableBinaryComparatorFactory(IPointableFactory pf) {
         this.pf = pf;
+        this.ct = CollationType.DEFAULT;
+    }
+    
+    public static PointableBinaryComparatorFactory of(IPointableFactory pf, CollationType ct) {
+        return new PointableBinaryComparatorFactory(pf, ct);
+    }
+
+    public PointableBinaryComparatorFactory(IPointableFactory pf, CollationType ct) {
+        this.pf = pf;
+        this.ct = ct;
     }
 
     @Override
@@ -40,7 +51,7 @@ public class PointableBinaryComparatorFactory implements IBinaryComparatorFactor
             @Override
             public int compare(byte[] b1, int s1, int l1, byte[] b2, int s2, int l2) {
                 p.set(b1, s1, l1);
-                return ((IComparable) p).compareTo(b2, s2, l2);
+                return ((IComparable) p).compareTo(b2, s2, l2, ct);
             }
         };
     }

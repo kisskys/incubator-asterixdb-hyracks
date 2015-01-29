@@ -13,10 +13,25 @@
  * limitations under the License.
  */
 
-package edu.uci.ics.hyracks.storage.am.lsm.invertedindex.tokenizers;
+package edu.uci.ics.hyracks.storage.am.common.tokenizer;
 
-import java.io.Serializable;
+import edu.uci.ics.hyracks.storage.am.common.api.IToken;
 
-public interface IBinaryTokenizerFactory extends Serializable {
-	public IBinaryTokenizer createTokenizer();
+public class UTF8NGramTokenFactory extends AbstractUTF8TokenFactory {
+
+	private static final long serialVersionUID = 1L;
+
+	public UTF8NGramTokenFactory() {
+		super();
+	}
+
+	public UTF8NGramTokenFactory(byte tokenTypeTag, byte countTypeTag) {
+		super(tokenTypeTag, countTypeTag);
+	}
+
+	@Override
+	public IToken createToken() {
+		return new UTF8NGramToken(tokenTypeTag, countTypeTag);
+	}
+
 }

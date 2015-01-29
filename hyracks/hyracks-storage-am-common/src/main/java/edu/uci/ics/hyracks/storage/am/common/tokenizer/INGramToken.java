@@ -13,23 +13,12 @@
  * limitations under the License.
  */
 
-package edu.uci.ics.hyracks.storage.am.lsm.invertedindex.tokenizers;
+package edu.uci.ics.hyracks.storage.am.common.tokenizer;
 
-public class UTF8NGramTokenFactory extends AbstractUTF8TokenFactory {
+public interface INGramToken {
+	public int getNumPostChars();
 
-	private static final long serialVersionUID = 1L;
+	public int getNumPreChars();
 
-	public UTF8NGramTokenFactory() {
-		super();
-	}
-
-	public UTF8NGramTokenFactory(byte tokenTypeTag, byte countTypeTag) {
-		super(tokenTypeTag, countTypeTag);
-	}
-
-	@Override
-	public IToken createToken() {
-		return new UTF8NGramToken(tokenTypeTag, countTypeTag);
-	}
-
+	public void setNumPrePostChars(int numPreChars, int numPostChars);
 }

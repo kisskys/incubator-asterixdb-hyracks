@@ -26,6 +26,7 @@ import edu.uci.ics.hyracks.storage.am.btree.impls.RangePredicate;
 import edu.uci.ics.hyracks.storage.am.common.AbstractIndexTestWorker;
 import edu.uci.ics.hyracks.storage.am.common.TestOperationSelector;
 import edu.uci.ics.hyracks.storage.am.common.TestOperationSelector.TestOperation;
+import edu.uci.ics.hyracks.storage.am.common.api.IBinaryTokenizerFactory;
 import edu.uci.ics.hyracks.storage.am.common.api.IIndex;
 import edu.uci.ics.hyracks.storage.am.common.api.IIndexCursor;
 import edu.uci.ics.hyracks.storage.am.common.api.IndexException;
@@ -38,7 +39,6 @@ import edu.uci.ics.hyracks.storage.am.lsm.invertedindex.impls.LSMInvertedIndexAc
 import edu.uci.ics.hyracks.storage.am.lsm.invertedindex.search.ConjunctiveSearchModifier;
 import edu.uci.ics.hyracks.storage.am.lsm.invertedindex.search.InvertedIndexSearchPredicate;
 import edu.uci.ics.hyracks.storage.am.lsm.invertedindex.search.JaccardSearchModifier;
-import edu.uci.ics.hyracks.storage.am.lsm.invertedindex.tokenizers.IBinaryTokenizerFactory;
 
 public class LSMInvertedIndexTestWorker extends AbstractIndexTestWorker {
 

@@ -37,11 +37,11 @@ import edu.uci.ics.hyracks.dataflow.std.file.FileScanOperatorDescriptor;
 import edu.uci.ics.hyracks.dataflow.std.file.FileSplit;
 import edu.uci.ics.hyracks.dataflow.std.file.IFileSplitProvider;
 import edu.uci.ics.hyracks.dataflow.std.file.PlainFileWriterOperatorDescriptor;
+import edu.uci.ics.hyracks.storage.am.common.api.IBinaryTokenizerFactory;
+import edu.uci.ics.hyracks.storage.am.common.api.ITokenFactory;
+import edu.uci.ics.hyracks.storage.am.common.tokenizer.DelimitedUTF8StringBinaryTokenizerFactory;
+import edu.uci.ics.hyracks.storage.am.common.tokenizer.UTF8WordTokenFactory;
 import edu.uci.ics.hyracks.storage.am.lsm.invertedindex.dataflow.BinaryTokenizerOperatorDescriptor;
-import edu.uci.ics.hyracks.storage.am.lsm.invertedindex.tokenizers.DelimitedUTF8StringBinaryTokenizerFactory;
-import edu.uci.ics.hyracks.storage.am.lsm.invertedindex.tokenizers.IBinaryTokenizerFactory;
-import edu.uci.ics.hyracks.storage.am.lsm.invertedindex.tokenizers.ITokenFactory;
-import edu.uci.ics.hyracks.storage.am.lsm.invertedindex.tokenizers.UTF8WordTokenFactory;
 import edu.uci.ics.hyracks.tests.integration.AbstractIntegrationTest;
 
 public class BinaryTokenizerOperatorTest extends AbstractIntegrationTest {
@@ -85,7 +85,7 @@ public class BinaryTokenizerOperatorTest extends AbstractIntegrationTest {
                 tokenFactory);
         int[] keyFields = { 0 };
         BinaryTokenizerOperatorDescriptor binaryTokenizer = new BinaryTokenizerOperatorDescriptor(spec,
-                tokenizerRecDesc, tokenizerFactory, 1, keyFields, addNumTokensKey, false);
+                tokenizerRecDesc, tokenizerFactory, 1, keyFields, addNumTokensKey, false, 1);
         PartitionConstraintHelper.addAbsoluteLocationConstraint(spec, binaryTokenizer, NC1_ID);
 
         IFileSplitProvider outSplits = new ConstantFileSplitProvider(new FileSplit[] { new FileSplit(NC1_ID,

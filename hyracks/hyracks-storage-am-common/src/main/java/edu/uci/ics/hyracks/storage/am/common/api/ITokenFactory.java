@@ -13,23 +13,10 @@
  * limitations under the License.
  */
 
-package edu.uci.ics.hyracks.storage.am.lsm.invertedindex.tokenizers;
+package edu.uci.ics.hyracks.storage.am.common.api;
 
-public class UTF8WordTokenFactory extends AbstractUTF8TokenFactory {
+import java.io.Serializable;
 
-	private static final long serialVersionUID = 1L;
-
-	public UTF8WordTokenFactory() {
-		super();
-	}
-
-	public UTF8WordTokenFactory(byte tokenTypeTag, byte countTypeTag) {
-		super(tokenTypeTag, countTypeTag);
-	}
-
-	@Override
-	public IToken createToken() {
-		return new UTF8WordToken(tokenTypeTag, countTypeTag);
-	}
-
+public interface ITokenFactory extends Serializable {
+    public IToken createToken();
 }

@@ -30,6 +30,11 @@ import org.junit.Before;
 import org.junit.Test;
 
 import edu.uci.ics.hyracks.data.std.util.GrowableArray;
+import edu.uci.ics.hyracks.storage.am.common.api.IToken;
+import edu.uci.ics.hyracks.storage.am.common.tokenizer.AbstractUTF8Token;
+import edu.uci.ics.hyracks.storage.am.common.tokenizer.HashedUTF8NGramTokenFactory;
+import edu.uci.ics.hyracks.storage.am.common.tokenizer.NGramUTF8StringBinaryTokenizer;
+import edu.uci.ics.hyracks.storage.am.common.tokenizer.UTF8NGramTokenFactory;
 
 public class NGramTokenizerTest {
 

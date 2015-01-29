@@ -13,20 +13,16 @@
  * limitations under the License.
  */
 
-package edu.uci.ics.hyracks.storage.am.lsm.invertedindex.tokenizers;
+package edu.uci.ics.hyracks.storage.am.common.api;
 
-public abstract class AbstractUTF8TokenFactory implements ITokenFactory {
-	private static final long serialVersionUID = 1L;
-	protected final byte tokenTypeTag;
-	protected final byte countTypeTag;
+import edu.uci.ics.hyracks.api.exceptions.HyracksDataException;
 
-	public AbstractUTF8TokenFactory() {
-		tokenTypeTag = -1;
-		countTypeTag = -1;
-	}
+public interface IBinaryTokenizer {
+    public IToken getToken();
 
-	public AbstractUTF8TokenFactory(byte tokenTypeTag, byte countTypeTag) {
-		this.tokenTypeTag = tokenTypeTag;
-		this.countTypeTag = countTypeTag;
-	}
+    public boolean hasNext();
+
+    public void next() throws HyracksDataException;
+
+    public void reset(byte[] data, int start, int length) throws HyracksDataException;
 }

@@ -13,10 +13,19 @@
  * limitations under the License.
  */
 
-package edu.uci.ics.hyracks.storage.am.lsm.invertedindex.tokenizers;
+package edu.uci.ics.hyracks.storage.am.common.tokenizer;
 
-import java.io.Serializable;
+import edu.uci.ics.hyracks.storage.am.common.api.IToken;
+import edu.uci.ics.hyracks.storage.am.common.api.ITokenFactory;
 
-public interface ITokenFactory extends Serializable {
-    public IToken createToken();
+public class NonTaggedByteArrayTokenFactory implements ITokenFactory {
+
+    private static final long serialVersionUID = 1L;
+
+    @Override
+    public IToken createToken() {
+        return new NonTaggedByteArrayToken();
+        //return new UTF8WordToken((byte)-1, (byte)-1);
+    }
+
 }

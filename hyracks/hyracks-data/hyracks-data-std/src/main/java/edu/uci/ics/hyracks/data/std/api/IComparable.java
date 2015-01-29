@@ -14,8 +14,12 @@
  */
 package edu.uci.ics.hyracks.data.std.api;
 
+import edu.uci.ics.hyracks.data.std.accessors.CollationType;
+
 public interface IComparable {
     public int compareTo(IPointable pointer);
-
+    
     public int compareTo(byte[] bytes, int start, int length);
+
+    public int compareTo(byte[] bytes, int start, int length, CollationType ct);
 }

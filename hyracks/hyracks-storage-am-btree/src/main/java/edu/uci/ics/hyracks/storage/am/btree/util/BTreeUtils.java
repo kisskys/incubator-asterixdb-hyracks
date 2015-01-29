@@ -49,7 +49,7 @@ public class BTreeUtils {
                 cmpFactories, typeTraits.length, file);
         return btree;
     }
-    
+
     public static BTree createBTree(IBufferCache bufferCache, IFreePageManager freePageManager,
             IFileMapProvider fileMapProvider, ITypeTraits[] typeTraits, IBinaryComparatorFactory[] cmpFactories,
             BTreeLeafFrameType leafType, FileReference file) throws BTreeException {

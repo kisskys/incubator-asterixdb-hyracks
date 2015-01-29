@@ -16,6 +16,7 @@
 package edu.uci.ics.hyracks.data.std.primitive;
 
 import edu.uci.ics.hyracks.api.dataflow.value.ITypeTraits;
+import edu.uci.ics.hyracks.data.std.accessors.CollationType;
 import edu.uci.ics.hyracks.data.std.api.*;
 
 public class ByteArrayPointable extends AbstractPointable implements IHashable, IComparable {
@@ -52,19 +53,44 @@ public class ByteArrayPointable extends AbstractPointable implements IHashable, 
     public int compareTo(IPointable pointer) {
         return compareTo(pointer.getByteArray(), pointer.getStartOffset(), pointer.getLength());
     }
-
+    
     @Override
     public int compareTo(byte[] bytes, int start, int length) {
-        int thislen = getLength(this.bytes, this.start);
-        int thatlen = getLength(bytes, start);
+        return compareTo(bytes, start, length, CollationType.DEFAULT);
+    }
+    
+    @Override
+    public int compareTo(byte[] bytes, int start, int length, CollationType ct) {
+        switch (ct) {
+            case SPATIAL_CELL: {
+                int thislen = getLength(this.bytes, this.start);
+                int thatlen = getLength(bytes, start);
 
-        for (int thisIndex = 0, thatIndex = 0; thisIndex < thislen && thatIndex < thatlen; ++thisIndex, ++thatIndex) {
-            if (this.bytes[this.start + SIZE_OF_LENGTH + thisIndex] != bytes[start + SIZE_OF_LENGTH + thatIndex]) {
-                return (0xff & this.bytes[this.start + SIZE_OF_LENGTH + thisIndex]) - (0xff & bytes[start + SIZE_OF_LENGTH
-                        + thatIndex]);
+                for (int thisIndex = 0, thatIndex = 0; thisIndex < thislen && thatIndex < thatlen; ++thisIndex, ++thatIndex) {
+                    if (this.bytes[this.start + SIZE_OF_LENGTH + thisIndex] != bytes[start + SIZE_OF_LENGTH + thatIndex]) {
+                        return (0xff & this.bytes[this.start + SIZE_OF_LENGTH + thisIndex]) - (0xff & bytes[start + SIZE_OF_LENGTH
+                                + thatIndex]);
+                    }
+                }
+                return thislen - thatlen;
+            }
+                
+            case DEFAULT:
+            default: {
+                int thislen = getLength(this.bytes, this.start);
+                int thatlen = getLength(bytes, start);
+
+                for (int thisIndex = 0, thatIndex = 0; thisIndex < thislen && thatIndex < thatlen; ++thisIndex, ++thatIndex) {
+                    if (this.bytes[this.start + SIZE_OF_LENGTH + thisIndex] != bytes[start + SIZE_OF_LENGTH + thatIndex]) {
+                        return (0xff & this.bytes[this.start + SIZE_OF_LENGTH + thisIndex]) - (0xff & bytes[start + SIZE_OF_LENGTH
+                                + thatIndex]);
+                    }
+                }
+                return thislen - thatlen;
             }
         }
-        return thislen - thatlen;
+        
+
     }
 
     @Override

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-package edu.uci.ics.hyracks.storage.am.lsm.invertedindex.util;
+package edu.uci.ics.hyracks.storage.am.common.tokenizer;
 
 import java.io.IOException;
 
@@ -21,37 +21,43 @@ import edu.uci.ics.hyracks.api.exceptions.HyracksDataException;
 import edu.uci.ics.hyracks.dataflow.common.comm.io.ArrayTupleBuilder;
 import edu.uci.ics.hyracks.dataflow.common.comm.io.ArrayTupleReference;
 import edu.uci.ics.hyracks.dataflow.common.data.accessors.ITupleReference;
-import edu.uci.ics.hyracks.storage.am.lsm.invertedindex.tokenizers.IBinaryTokenizer;
-import edu.uci.ics.hyracks.storage.am.lsm.invertedindex.tokenizers.IToken;
+import edu.uci.ics.hyracks.storage.am.common.api.IBinaryTokenizer;
+import edu.uci.ics.hyracks.storage.am.common.api.IToken;
+import edu.uci.ics.hyracks.storage.am.common.api.ITokenizingTupleIterator;
 
 // TODO: We can possibly avoid copying the data into a new tuple here.
-public class InvertedIndexTokenizingTupleIterator {
+public class TokenizingTupleIterator implements ITokenizingTupleIterator {
     // Field that is expected to be tokenized.
-    protected final int DOC_FIELD_INDEX = 0;
+    protected final int FILED_TO_BE_TOKENIZED = 0;
 
-    protected final int invListFieldCount;
+    protected final int tokensFieldCount;
+    protected final int attachedFieldCount; //ex. primary key fields count
     protected final ArrayTupleBuilder tupleBuilder;
     protected final ArrayTupleReference tupleReference;
     protected final IBinaryTokenizer tokenizer;
     protected ITupleReference inputTuple;
 
-    public InvertedIndexTokenizingTupleIterator(int tokensFieldCount, int invListFieldCount, IBinaryTokenizer tokenizer) {
-        this.invListFieldCount = invListFieldCount;
-        this.tupleBuilder = new ArrayTupleBuilder(tokensFieldCount + invListFieldCount);
+    public TokenizingTupleIterator(int tokensFieldCount, int attachedFieldCount, IBinaryTokenizer tokenizer) {
+        this.tokensFieldCount = tokensFieldCount; //This is always 1. We don't support tokenizing more than 1 field in a tuple
+        this.attachedFieldCount = attachedFieldCount;
+        this.tupleBuilder = new ArrayTupleBuilder(tokensFieldCount + attachedFieldCount);
         this.tupleReference = new ArrayTupleReference();
         this.tokenizer = tokenizer;
     }
 
+    @Override
     public void reset(ITupleReference inputTuple) throws HyracksDataException {
         this.inputTuple = inputTuple;
-        tokenizer.reset(inputTuple.getFieldData(DOC_FIELD_INDEX), inputTuple.getFieldStart(DOC_FIELD_INDEX),
-                inputTuple.getFieldLength(DOC_FIELD_INDEX));
+        tokenizer.reset(inputTuple.getFieldData(FILED_TO_BE_TOKENIZED), inputTuple.getFieldStart(FILED_TO_BE_TOKENIZED),
+                inputTuple.getFieldLength(FILED_TO_BE_TOKENIZED));
     }
 
+    @Override
     public boolean hasNext() {
         return tokenizer.hasNext();
     }
 
+    @Override
     public void next() throws HyracksDataException {
         tokenizer.next();
         IToken token = tokenizer.getToken();
@@ -63,8 +69,8 @@ public class InvertedIndexTokenizingTupleIterator {
             throw new HyracksDataException(e);
         }
         tupleBuilder.addFieldEndOffset();
-        // Add inverted-list element fields.
-        for (int i = 0; i < invListFieldCount; i++) {
+        // append attached fields.
+        for (int i = 0; i < attachedFieldCount; i++) {
             tupleBuilder.addField(inputTuple.getFieldData(i + 1), inputTuple.getFieldStart(i + 1),
                     inputTuple.getFieldLength(i + 1));
         }
@@ -72,6 +78,7 @@ public class InvertedIndexTokenizingTupleIterator {
         tupleReference.reset(tupleBuilder.getFieldEndOffsets(), tupleBuilder.getByteArray());
     }
 
+    @Override
     public ITupleReference getTuple() {
         return tupleReference;
     }

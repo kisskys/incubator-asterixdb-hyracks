@@ -16,6 +16,7 @@ package edu.uci.ics.hyracks.storage.am.lsm.btree.dataflow;
 
 import edu.uci.ics.hyracks.api.context.IHyracksTaskContext;
 import edu.uci.ics.hyracks.api.exceptions.HyracksDataException;
+import edu.uci.ics.hyracks.storage.am.common.api.IBinaryTokenizerFactory;
 import edu.uci.ics.hyracks.storage.am.common.api.IIndex;
 import edu.uci.ics.hyracks.storage.am.common.dataflow.AbstractTreeIndexOperatorDescriptor;
 import edu.uci.ics.hyracks.storage.am.common.dataflow.IIndexOperatorDescriptor;
@@ -30,25 +31,29 @@ public class ExternalBTreeWithBuddyDataflowHelper extends AbstractLSMIndexDatafl
 
     private int[] buddyBtreeFields;
     private int version;
+    private final IBinaryTokenizerFactory tokenizerFactory;
 
     public ExternalBTreeWithBuddyDataflowHelper(IIndexOperatorDescriptor opDesc, IHyracksTaskContext ctx,
             int partition, ILSMMergePolicy mergePolicy, ILSMOperationTrackerProvider opTrackerFactory,
             ILSMIOOperationScheduler ioScheduler, ILSMIOOperationCallbackFactory ioOpCallbackFactory,
-            int[] buddyBtreeFields, int version) {
+            int[] buddyBtreeFields, int version, IBinaryTokenizerFactory tokenizerFactory) {
         super(opDesc, ctx, partition, null, mergePolicy, opTrackerFactory, ioScheduler, ioOpCallbackFactory, null,
                 null, null);
         this.buddyBtreeFields = buddyBtreeFields;
         this.version = version;
+        this.tokenizerFactory = tokenizerFactory;
     }
 
     public ExternalBTreeWithBuddyDataflowHelper(IIndexOperatorDescriptor opDesc, IHyracksTaskContext ctx,
             int partition, double bloomFilterFalsePositiveRate, ILSMMergePolicy mergePolicy,
             ILSMOperationTrackerProvider opTrackerFactory, ILSMIOOperationScheduler ioScheduler,
-            ILSMIOOperationCallbackFactory ioOpCallbackFactory, int[] buddyBtreeFields, int version) {
+            ILSMIOOperationCallbackFactory ioOpCallbackFactory, int[] buddyBtreeFields, int version,
+            IBinaryTokenizerFactory tokenizerFactory) {
         super(opDesc, ctx, partition, null, bloomFilterFalsePositiveRate, mergePolicy, opTrackerFactory, ioScheduler,
                 ioOpCallbackFactory, null, null, null);
         this.buddyBtreeFields = buddyBtreeFields;
         this.version = version;
+        this.tokenizerFactory = tokenizerFactory;
     }
 
     @Override
@@ -78,7 +83,7 @@ public class ExternalBTreeWithBuddyDataflowHelper extends AbstractLSMIndexDatafl
                 .getStorageManager().getFileMapProvider(ctx), treeOpDesc.getTreeIndexTypeTraits(), treeOpDesc
                 .getTreeIndexComparatorFactories(), bloomFilterFalsePositiveRate, mergePolicy, opTrackerFactory
                 .getOperationTracker(ctx), ioScheduler, ioOpCallbackFactory.createIOOperationCallback(),
-                buddyBtreeFields, version);
+                buddyBtreeFields, version, tokenizerFactory);
     }
 
     public int getTargetVersion() {

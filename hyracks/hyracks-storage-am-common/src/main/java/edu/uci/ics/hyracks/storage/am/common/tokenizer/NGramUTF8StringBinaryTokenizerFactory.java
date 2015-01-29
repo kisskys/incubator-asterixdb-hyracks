@@ -13,7 +13,11 @@
  * limitations under the License.
  */
 
-package edu.uci.ics.hyracks.storage.am.lsm.invertedindex.tokenizers;
+package edu.uci.ics.hyracks.storage.am.common.tokenizer;
+
+import edu.uci.ics.hyracks.storage.am.common.api.IBinaryTokenizer;
+import edu.uci.ics.hyracks.storage.am.common.api.IBinaryTokenizerFactory;
+import edu.uci.ics.hyracks.storage.am.common.api.ITokenFactory;
 
 public class NGramUTF8StringBinaryTokenizerFactory implements IBinaryTokenizerFactory {
 
@@ -38,5 +42,4 @@ public class NGramUTF8StringBinaryTokenizerFactory implements IBinaryTokenizerFa
         return new NGramUTF8StringBinaryTokenizer(gramLength, usePrePost, ignoreTokenCount, sourceHasTypeTag,
                 tokenFactory);
     }
-
 }

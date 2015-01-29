@@ -19,13 +19,14 @@ import edu.uci.ics.hyracks.api.dataflow.value.IBinaryComparatorFactory;
 import edu.uci.ics.hyracks.storage.am.btree.impls.BTree;
 import edu.uci.ics.hyracks.storage.am.btree.impls.BTree.BTreeAccessor;
 import edu.uci.ics.hyracks.storage.am.btree.impls.RangePredicate;
+import edu.uci.ics.hyracks.storage.am.common.api.IBinaryTokenizer;
+import edu.uci.ics.hyracks.storage.am.common.api.IBinaryTokenizerFactory;
 import edu.uci.ics.hyracks.storage.am.common.api.IIndexOperationContext;
+import edu.uci.ics.hyracks.storage.am.common.api.ITokenizingTupleIterator;
 import edu.uci.ics.hyracks.storage.am.common.impls.NoOpOperationCallback;
 import edu.uci.ics.hyracks.storage.am.common.ophelpers.IndexOperation;
 import edu.uci.ics.hyracks.storage.am.common.ophelpers.MultiComparator;
-import edu.uci.ics.hyracks.storage.am.lsm.invertedindex.tokenizers.IBinaryTokenizer;
-import edu.uci.ics.hyracks.storage.am.lsm.invertedindex.tokenizers.IBinaryTokenizerFactory;
-import edu.uci.ics.hyracks.storage.am.lsm.invertedindex.util.InvertedIndexTokenizingTupleIterator;
+import edu.uci.ics.hyracks.storage.am.common.tokenizer.TokenizingTupleIterator;
 
 public class InMemoryInvertedIndexOpContext implements IIndexOperationContext {
     public IndexOperation op;
@@ -40,7 +41,7 @@ public class InMemoryInvertedIndexOpContext implements IIndexOperationContext {
 
     // To generate in-memory BTree tuples for insertions.
     protected final IBinaryTokenizerFactory tokenizerFactory;
-    public InvertedIndexTokenizingTupleIterator tupleIter;
+    public ITokenizingTupleIterator tupleIter;
 
     public InMemoryInvertedIndexOpContext(BTree btree, IBinaryComparatorFactory[] tokenCmpFactories,
             IBinaryTokenizerFactory tokenizerFactory) {
@@ -88,7 +89,7 @@ public class InMemoryInvertedIndexOpContext implements IIndexOperationContext {
 
     protected void setTokenizingTupleIterator() {
         IBinaryTokenizer tokenizer = tokenizerFactory.createTokenizer();
-        tupleIter = new InvertedIndexTokenizingTupleIterator(tokenCmpFactories.length, btree.getFieldCount()
+        tupleIter = new TokenizingTupleIterator(tokenCmpFactories.length, btree.getFieldCount()
                 - tokenCmpFactories.length, tokenizer);
     }
 }

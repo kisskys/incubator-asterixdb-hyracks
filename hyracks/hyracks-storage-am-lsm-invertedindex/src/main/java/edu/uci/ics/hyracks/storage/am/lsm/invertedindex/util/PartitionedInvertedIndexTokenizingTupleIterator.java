@@ -19,11 +19,12 @@ import java.io.IOException;
 
 import edu.uci.ics.hyracks.api.exceptions.HyracksDataException;
 import edu.uci.ics.hyracks.dataflow.common.data.accessors.ITupleReference;
-import edu.uci.ics.hyracks.storage.am.lsm.invertedindex.tokenizers.IBinaryTokenizer;
-import edu.uci.ics.hyracks.storage.am.lsm.invertedindex.tokenizers.IToken;
+import edu.uci.ics.hyracks.storage.am.common.api.IBinaryTokenizer;
+import edu.uci.ics.hyracks.storage.am.common.api.IToken;
+import edu.uci.ics.hyracks.storage.am.common.tokenizer.TokenizingTupleIterator;
 
 // TODO: We can possibly avoid copying the data into a new tuple here.
-public class PartitionedInvertedIndexTokenizingTupleIterator extends InvertedIndexTokenizingTupleIterator {
+public class PartitionedInvertedIndexTokenizingTupleIterator extends TokenizingTupleIterator {
 
     protected short numTokens = 0;
 
@@ -58,7 +59,7 @@ public class PartitionedInvertedIndexTokenizingTupleIterator extends InvertedInd
             throw new HyracksDataException(e);
         }
         // Add inverted-list element fields.
-        for (int i = 0; i < invListFieldCount; i++) {
+        for (int i = 0; i < attachedFieldCount; i++) {
             tupleBuilder.addField(inputTuple.getFieldData(i + 1), inputTuple.getFieldStart(i + 1),
                     inputTuple.getFieldLength(i + 1));
         }

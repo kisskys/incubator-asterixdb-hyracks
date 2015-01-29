@@ -13,22 +13,22 @@
  * limitations under the License.
  */
 
-package edu.uci.ics.hyracks.storage.am.lsm.invertedindex.tokenizers;
+package edu.uci.ics.hyracks.storage.am.common.tokenizer;
 
-public class HashedUTF8WordTokenFactory extends AbstractUTF8TokenFactory {
+import edu.uci.ics.hyracks.storage.am.common.api.ITokenFactory;
 
+public abstract class AbstractUTF8TokenFactory implements ITokenFactory {
 	private static final long serialVersionUID = 1L;
+	protected final byte tokenTypeTag;
+	protected final byte countTypeTag;
 
-	public HashedUTF8WordTokenFactory() {
-		super();
+	public AbstractUTF8TokenFactory() {
+		tokenTypeTag = -1;
+		countTypeTag = -1;
 	}
 
-	public HashedUTF8WordTokenFactory(byte tokenTypeTag, byte countTypeTag) {
-		super(tokenTypeTag, countTypeTag);
-	}
-
-	@Override
-	public IToken createToken() {
-		return new HashedUTF8WordToken(tokenTypeTag, countTypeTag);
+	public AbstractUTF8TokenFactory(byte tokenTypeTag, byte countTypeTag) {
+		this.tokenTypeTag = tokenTypeTag;
+		this.countTypeTag = countTypeTag;
 	}
 }

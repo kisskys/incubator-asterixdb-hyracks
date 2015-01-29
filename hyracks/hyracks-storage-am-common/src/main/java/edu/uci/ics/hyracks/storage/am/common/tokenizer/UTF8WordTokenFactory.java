@@ -13,16 +13,25 @@
  * limitations under the License.
  */
 
-package edu.uci.ics.hyracks.storage.am.lsm.invertedindex.tokenizers;
+package edu.uci.ics.hyracks.storage.am.common.tokenizer;
 
-import edu.uci.ics.hyracks.api.exceptions.HyracksDataException;
+import edu.uci.ics.hyracks.storage.am.common.api.IToken;
 
-public interface IBinaryTokenizer {
-    public IToken getToken();
+public class UTF8WordTokenFactory extends AbstractUTF8TokenFactory {
 
-    public boolean hasNext();
+	private static final long serialVersionUID = 1L;
 
-    public void next() throws HyracksDataException;
+	public UTF8WordTokenFactory() {
+		super();
+	}
 
-    public void reset(byte[] data, int start, int length) throws HyracksDataException;
+	public UTF8WordTokenFactory(byte tokenTypeTag, byte countTypeTag) {
+		super(tokenTypeTag, countTypeTag);
+	}
+
+	@Override
+	public IToken createToken() {
+		return new UTF8WordToken(tokenTypeTag, countTypeTag);
+	}
+
 }
