@@ -17,7 +17,11 @@ package edu.uci.ics.hyracks.data.std.primitive;
 
 import edu.uci.ics.hyracks.api.dataflow.value.ITypeTraits;
 import edu.uci.ics.hyracks.data.std.accessors.CollationType;
-import edu.uci.ics.hyracks.data.std.api.*;
+import edu.uci.ics.hyracks.data.std.api.AbstractPointable;
+import edu.uci.ics.hyracks.data.std.api.IComparable;
+import edu.uci.ics.hyracks.data.std.api.IHashable;
+import edu.uci.ics.hyracks.data.std.api.IPointable;
+import edu.uci.ics.hyracks.data.std.api.IPointableFactory;
 
 public class ByteArrayPointable extends AbstractPointable implements IHashable, IComparable {
 
@@ -53,44 +57,24 @@ public class ByteArrayPointable extends AbstractPointable implements IHashable, 
     public int compareTo(IPointable pointer) {
         return compareTo(pointer.getByteArray(), pointer.getStartOffset(), pointer.getLength());
     }
-    
+
     @Override
     public int compareTo(byte[] bytes, int start, int length) {
         return compareTo(bytes, start, length, CollationType.DEFAULT);
     }
-    
+
     @Override
     public int compareTo(byte[] bytes, int start, int length, CollationType ct) {
-        switch (ct) {
-            case SPATIAL_CELL: {
-                int thislen = getLength(this.bytes, this.start);
-                int thatlen = getLength(bytes, start);
+        int thislen = getLength(this.bytes, this.start);
+        int thatlen = getLength(bytes, start);
 
-                for (int thisIndex = 0, thatIndex = 0; thisIndex < thislen && thatIndex < thatlen; ++thisIndex, ++thatIndex) {
-                    if (this.bytes[this.start + SIZE_OF_LENGTH + thisIndex] != bytes[start + SIZE_OF_LENGTH + thatIndex]) {
-                        return (0xff & this.bytes[this.start + SIZE_OF_LENGTH + thisIndex]) - (0xff & bytes[start + SIZE_OF_LENGTH
-                                + thatIndex]);
-                    }
-                }
-                return thislen - thatlen;
-            }
-                
-            case DEFAULT:
-            default: {
-                int thislen = getLength(this.bytes, this.start);
-                int thatlen = getLength(bytes, start);
-
-                for (int thisIndex = 0, thatIndex = 0; thisIndex < thislen && thatIndex < thatlen; ++thisIndex, ++thatIndex) {
-                    if (this.bytes[this.start + SIZE_OF_LENGTH + thisIndex] != bytes[start + SIZE_OF_LENGTH + thatIndex]) {
-                        return (0xff & this.bytes[this.start + SIZE_OF_LENGTH + thisIndex]) - (0xff & bytes[start + SIZE_OF_LENGTH
-                                + thatIndex]);
-                    }
-                }
-                return thislen - thatlen;
+        for (int thisIndex = 0, thatIndex = 0; thisIndex < thislen && thatIndex < thatlen; ++thisIndex, ++thatIndex) {
+            if (this.bytes[this.start + SIZE_OF_LENGTH + thisIndex] != bytes[start + SIZE_OF_LENGTH + thatIndex]) {
+                return (0xff & this.bytes[this.start + SIZE_OF_LENGTH + thisIndex])
+                        - (0xff & bytes[start + SIZE_OF_LENGTH + thatIndex]);
             }
         }
-        
-
+        return thislen - thatlen;
     }
 
     @Override
@@ -104,7 +88,7 @@ public class ByteArrayPointable extends AbstractPointable implements IHashable, 
     }
 
     @Override
-    public int getLength(){
+    public int getLength() {
         return getFullLength(getByteArray(), getStartOffset());
     }
 
@@ -115,7 +99,7 @@ public class ByteArrayPointable extends AbstractPointable implements IHashable, 
         return ((0xFF & bytes[offset]) << 8) + (0xFF & bytes[offset + 1]);
     }
 
-    public static int getFullLength(byte[] bytes, int offset){
+    public static int getFullLength(byte[] bytes, int offset) {
         return getLength(bytes, offset) + SIZE_OF_LENGTH;
     }
 

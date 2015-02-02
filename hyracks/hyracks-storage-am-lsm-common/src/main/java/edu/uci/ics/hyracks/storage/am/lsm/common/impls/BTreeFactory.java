@@ -18,7 +18,6 @@ package edu.uci.ics.hyracks.storage.am.lsm.common.impls;
 import edu.uci.ics.hyracks.api.dataflow.value.IBinaryComparatorFactory;
 import edu.uci.ics.hyracks.api.io.FileReference;
 import edu.uci.ics.hyracks.storage.am.btree.impls.BTree;
-import edu.uci.ics.hyracks.storage.am.common.api.IBinaryTokenizerFactory;
 import edu.uci.ics.hyracks.storage.am.common.api.IFreePageManagerFactory;
 import edu.uci.ics.hyracks.storage.am.common.api.ITreeIndexFrameFactory;
 import edu.uci.ics.hyracks.storage.am.common.api.IndexException;
@@ -27,20 +26,16 @@ import edu.uci.ics.hyracks.storage.common.file.IFileMapProvider;
 
 public class BTreeFactory extends TreeIndexFactory<BTree> {
 
-    private final IBinaryTokenizerFactory tokenizerFactory;
-
     public BTreeFactory(IBufferCache bufferCache, IFileMapProvider fileMapProvider,
             IFreePageManagerFactory freePageManagerFactory, ITreeIndexFrameFactory interiorFrameFactory,
-            ITreeIndexFrameFactory leafFrameFactory, IBinaryComparatorFactory[] cmpFactories, int fieldCount,
-            IBinaryTokenizerFactory tokenizerFactory) {
+            ITreeIndexFrameFactory leafFrameFactory, IBinaryComparatorFactory[] cmpFactories, int fieldCount) {
         super(bufferCache, fileMapProvider, freePageManagerFactory, interiorFrameFactory, leafFrameFactory,
                 cmpFactories, fieldCount);
-        this.tokenizerFactory = tokenizerFactory;
     }
 
     @Override
     public BTree createIndexInstance(FileReference file) throws IndexException {
         return new BTree(bufferCache, fileMapProvider, freePageManagerFactory.createFreePageManager(),
-                interiorFrameFactory, leafFrameFactory, cmpFactories, fieldCount, file, tokenizerFactory);
+                interiorFrameFactory, leafFrameFactory, cmpFactories, fieldCount, file);
     }
 }

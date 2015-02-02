@@ -115,7 +115,7 @@ public class InvertedIndexUtils {
                 metaFrameFactory);
         BTreeFactory deletedKeysBTreeFactory = new BTreeFactory(diskBufferCache, diskFileMapProvider,
                 freePageManagerFactory, interiorFrameFactory, leafFrameFactory, invListCmpFactories,
-                invListCmpFactories.length, null);
+                invListCmpFactories.length);
         return deletedKeysBTreeFactory;
     }
 

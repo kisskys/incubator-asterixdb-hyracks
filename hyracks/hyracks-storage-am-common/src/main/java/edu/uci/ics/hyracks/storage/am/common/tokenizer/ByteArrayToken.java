@@ -15,6 +15,7 @@
 
 package edu.uci.ics.hyracks.storage.am.common.tokenizer;
 
+import java.io.DataOutput;
 import java.io.IOException;
 
 import edu.uci.ics.hyracks.data.std.primitive.ByteArrayPointable;
@@ -22,14 +23,19 @@ import edu.uci.ics.hyracks.data.std.util.GrowableArray;
 import edu.uci.ics.hyracks.dataflow.common.data.marshalling.ByteArraySerializerDeserializer;
 import edu.uci.ics.hyracks.storage.am.common.api.IToken;
 
-public class NonTaggedByteArrayToken implements IToken {
+public class ByteArrayToken implements IToken {
     
     private int length;
     private int tokenLength;
     private int start;
     private int tokenCount;
     private byte[] data;
+    private final byte tokenTypeTag;
 
+    public ByteArrayToken(byte tokenTypeTag) {
+        this.tokenTypeTag = tokenTypeTag;
+    }
+    
     @Override
     public byte[] getData() {
         return data;
@@ -61,9 +67,11 @@ public class NonTaggedByteArrayToken implements IToken {
 
     @Override
     public void serializeToken(GrowableArray out) throws IOException {
+        if (tokenTypeTag > 0) {
+            out.getDataOutput().write(tokenTypeTag);
+        }
         out.getDataOutput().writeShort(length);
         ByteArraySerializerDeserializer.INSTANCE.serialize(data, start, length, out.getDataOutput());
-        //out.getDataOutput().write(data, start, length);
     }
 
     @Override

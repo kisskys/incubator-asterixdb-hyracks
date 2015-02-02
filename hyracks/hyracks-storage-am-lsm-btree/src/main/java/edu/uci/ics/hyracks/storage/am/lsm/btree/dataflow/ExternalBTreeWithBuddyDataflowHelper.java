@@ -31,7 +31,6 @@ public class ExternalBTreeWithBuddyDataflowHelper extends AbstractLSMIndexDatafl
 
     private int[] buddyBtreeFields;
     private int version;
-    private final IBinaryTokenizerFactory tokenizerFactory;
 
     public ExternalBTreeWithBuddyDataflowHelper(IIndexOperatorDescriptor opDesc, IHyracksTaskContext ctx,
             int partition, ILSMMergePolicy mergePolicy, ILSMOperationTrackerProvider opTrackerFactory,
@@ -41,19 +40,16 @@ public class ExternalBTreeWithBuddyDataflowHelper extends AbstractLSMIndexDatafl
                 null, null);
         this.buddyBtreeFields = buddyBtreeFields;
         this.version = version;
-        this.tokenizerFactory = tokenizerFactory;
     }
 
     public ExternalBTreeWithBuddyDataflowHelper(IIndexOperatorDescriptor opDesc, IHyracksTaskContext ctx,
             int partition, double bloomFilterFalsePositiveRate, ILSMMergePolicy mergePolicy,
             ILSMOperationTrackerProvider opTrackerFactory, ILSMIOOperationScheduler ioScheduler,
-            ILSMIOOperationCallbackFactory ioOpCallbackFactory, int[] buddyBtreeFields, int version,
-            IBinaryTokenizerFactory tokenizerFactory) {
+            ILSMIOOperationCallbackFactory ioOpCallbackFactory, int[] buddyBtreeFields, int version) {
         super(opDesc, ctx, partition, null, bloomFilterFalsePositiveRate, mergePolicy, opTrackerFactory, ioScheduler,
                 ioOpCallbackFactory, null, null, null);
         this.buddyBtreeFields = buddyBtreeFields;
         this.version = version;
-        this.tokenizerFactory = tokenizerFactory;
     }
 
     @Override
@@ -83,7 +79,7 @@ public class ExternalBTreeWithBuddyDataflowHelper extends AbstractLSMIndexDatafl
                 .getStorageManager().getFileMapProvider(ctx), treeOpDesc.getTreeIndexTypeTraits(), treeOpDesc
                 .getTreeIndexComparatorFactories(), bloomFilterFalsePositiveRate, mergePolicy, opTrackerFactory
                 .getOperationTracker(ctx), ioScheduler, ioOpCallbackFactory.createIOOperationCallback(),
-                buddyBtreeFields, version, tokenizerFactory);
+                buddyBtreeFields, version);
     }
 
     public int getTargetVersion() {

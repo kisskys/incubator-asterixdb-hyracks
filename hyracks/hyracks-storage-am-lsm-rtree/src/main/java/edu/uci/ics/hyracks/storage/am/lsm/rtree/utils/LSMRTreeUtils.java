@@ -113,7 +113,7 @@ public class LSMRTreeUtils {
                 typeTraits.length, isPointMBR);
         TreeIndexFactory<BTree> diskBTreeFactory = new BTreeFactory(diskBufferCache, diskFileMapProvider,
                 freePageManagerFactory, btreeInteriorFrameFactory, btreeLeafFrameFactory, btreeCmpFactories,
-                btreeTypeTraits.length, null);
+                btreeTypeTraits.length);
 
         int[] comparatorFields = { 0 };
         IBinaryComparatorFactory[] linearizerArray = { linearizeCmpFactory };
@@ -266,7 +266,7 @@ public class LSMRTreeUtils {
                 typeTraits.length, isPointMBR);
         TreeIndexFactory<BTree> diskBTreeFactory = new BTreeFactory(diskBufferCache, diskFileMapProvider,
                 freePageManagerFactory, btreeInteriorFrameFactory, btreeLeafFrameFactory, btreeCmpFactories,
-                btreeTypeTraits.length, null);
+                btreeTypeTraits.length);
         int[] comparatorFields = { 0 };
         IBinaryComparatorFactory[] linearizerArray = { linearizeCmpFactory };
 

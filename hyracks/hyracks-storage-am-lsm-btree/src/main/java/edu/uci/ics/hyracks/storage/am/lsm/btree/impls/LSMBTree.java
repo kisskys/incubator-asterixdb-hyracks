@@ -33,7 +33,6 @@ import edu.uci.ics.hyracks.storage.am.btree.impls.BTree.BTreeAccessor;
 import edu.uci.ics.hyracks.storage.am.btree.impls.BTree.BTreeBulkLoader;
 import edu.uci.ics.hyracks.storage.am.btree.impls.BTreeRangeSearchCursor;
 import edu.uci.ics.hyracks.storage.am.btree.impls.RangePredicate;
-import edu.uci.ics.hyracks.storage.am.common.api.IBinaryTokenizerFactory;
 import edu.uci.ics.hyracks.storage.am.common.api.IFreePageManager;
 import edu.uci.ics.hyracks.storage.am.common.api.IIndexAccessor;
 import edu.uci.ics.hyracks.storage.am.common.api.IIndexBulkLoader;
@@ -91,7 +90,6 @@ public class LSMBTree extends AbstractLSMIndex implements ITreeIndex {
     protected final ITreeIndexFrameFactory insertLeafFrameFactory;
     protected final ITreeIndexFrameFactory deleteLeafFrameFactory;
     protected final IBinaryComparatorFactory[] cmpFactories;
-    protected final IBinaryTokenizerFactory tokenizerFactory;
 
     private final boolean needKeyDupCheck;
     private final int[] btreeFields;
@@ -104,8 +102,7 @@ public class LSMBTree extends AbstractLSMIndex implements ITreeIndex {
             LSMComponentFilterManager filterManager, double bloomFilterFalsePositiveRate,
             IFileMapProvider diskFileMapProvider, int fieldCount, IBinaryComparatorFactory[] cmpFactories,
             ILSMMergePolicy mergePolicy, ILSMOperationTracker opTracker, ILSMIOOperationScheduler ioScheduler,
-            ILSMIOOperationCallback ioOpCallback, boolean needKeyDupCheck, int[] btreeFields, int[] filterFields,
-            IBinaryTokenizerFactory tokenizerFactory) {
+            ILSMIOOperationCallback ioOpCallback, boolean needKeyDupCheck, int[] btreeFields, int[] filterFields) {
         super(virtualBufferCaches, diskBTreeFactory.getBufferCache(), fileManager, diskFileMapProvider,
                 bloomFilterFalsePositiveRate, mergePolicy, opTracker, ioScheduler, ioOpCallback, filterFrameFactory,
                 filterManager, filterFields);
@@ -114,8 +111,7 @@ public class LSMBTree extends AbstractLSMIndex implements ITreeIndex {
             BTree btree = null;
             btree = new BTree(virtualBufferCache, virtualBufferCache.getFileMapProvider(), new VirtualFreePageManager(
                     virtualBufferCache.getNumPages()), interiorFrameFactory, insertLeafFrameFactory, cmpFactories,
-                    fieldCount, new FileReference(new File(fileManager.getBaseDir() + "_virtual_" + i)),
-                    tokenizerFactory);
+                    fieldCount, new FileReference(new File(fileManager.getBaseDir() + "_virtual_" + i)));
             LSMBTreeMemoryComponent mutableComponent = new LSMBTreeMemoryComponent(btree, virtualBufferCache,
                     i == 0 ? true : false, filterFactory == null ? null : filterFactory.createLSMComponentFilter());
             memoryComponents.add(mutableComponent);
@@ -130,7 +126,6 @@ public class LSMBTree extends AbstractLSMIndex implements ITreeIndex {
                 filterFactory);
         this.needKeyDupCheck = needKeyDupCheck;
         this.btreeFields = btreeFields;
-        this.tokenizerFactory = tokenizerFactory;
     }
 
     // Without memory components
@@ -150,8 +145,6 @@ public class LSMBTree extends AbstractLSMIndex implements ITreeIndex {
         bulkLoadComponentFactory = new LSMBTreeDiskComponentFactory(bulkLoadBTreeFactory, bloomFilterFactory, null);
         this.needKeyDupCheck = needKeyDupCheck;
         this.btreeFields = null;
-        //TODO set tokenizerFactor correctly to support *External* Static Hilbert BTree 
-        this.tokenizerFactory = null;
     }
 
     @Override

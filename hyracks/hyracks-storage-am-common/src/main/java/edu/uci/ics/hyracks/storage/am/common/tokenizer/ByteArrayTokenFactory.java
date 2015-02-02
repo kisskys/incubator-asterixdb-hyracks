@@ -18,14 +18,18 @@ package edu.uci.ics.hyracks.storage.am.common.tokenizer;
 import edu.uci.ics.hyracks.storage.am.common.api.IToken;
 import edu.uci.ics.hyracks.storage.am.common.api.ITokenFactory;
 
-public class NonTaggedByteArrayTokenFactory implements ITokenFactory {
+public class ByteArrayTokenFactory implements ITokenFactory {
 
     private static final long serialVersionUID = 1L;
+    private final byte tokenTypeTag;
 
+    public ByteArrayTokenFactory(byte tokenTypeTag) {
+        this.tokenTypeTag = tokenTypeTag;
+    }
+    
     @Override
     public IToken createToken() {
-        return new NonTaggedByteArrayToken();
-        //return new UTF8WordToken((byte)-1, (byte)-1);
+        return new ByteArrayToken(tokenTypeTag);
     }
 
 }

@@ -17,7 +17,6 @@ package edu.uci.ics.hyracks.storage.am.lsm.btree.dataflow;
 import java.util.Map;
 
 import edu.uci.ics.hyracks.api.context.IHyracksTaskContext;
-import edu.uci.ics.hyracks.storage.am.common.api.IBinaryTokenizerFactory;
 import edu.uci.ics.hyracks.storage.am.common.api.IIndexDataflowHelper;
 import edu.uci.ics.hyracks.storage.am.common.dataflow.IIndexOperatorDescriptor;
 import edu.uci.ics.hyracks.storage.am.lsm.common.api.ILSMIOOperationCallbackFactory;
@@ -31,18 +30,15 @@ public class ExternalBTreeWithBuddyDataflowHelperFactory extends AbstractLSMInde
     private static final long serialVersionUID = 1L;
     private final int[] buddyBtreeFields;
     private int version;
-    private final IBinaryTokenizerFactory tokenizerFactory;
 
     public ExternalBTreeWithBuddyDataflowHelperFactory(ILSMMergePolicyFactory mergePolicyFactory,
             Map<String, String> mergePolicyProperties, ILSMOperationTrackerProvider opTrackerFactory,
             ILSMIOOperationSchedulerProvider ioSchedulerProvider, ILSMIOOperationCallbackFactory ioOpCallbackFactory,
-            double bloomFilterFalsePositiveRate, int[] buddyBtreeFields, int version,
-            IBinaryTokenizerFactory tokenizerFactory) {
+            double bloomFilterFalsePositiveRate, int[] buddyBtreeFields, int version) {
         super(null, mergePolicyFactory, mergePolicyProperties, opTrackerFactory, ioSchedulerProvider,
                 ioOpCallbackFactory, bloomFilterFalsePositiveRate, null, null, null);
         this.buddyBtreeFields = buddyBtreeFields;
         this.version = version;
-        this.tokenizerFactory = tokenizerFactory;
     }
 
     @Override
@@ -50,8 +46,7 @@ public class ExternalBTreeWithBuddyDataflowHelperFactory extends AbstractLSMInde
             int partition) {
         return new ExternalBTreeWithBuddyDataflowHelper(opDesc, ctx, partition, bloomFilterFalsePositiveRate,
                 mergePolicyFactory.createMergePolicy(mergePolicyProperties, ctx), opTrackerFactory,
-                ioSchedulerProvider.getIOScheduler(ctx), ioOpCallbackFactory, buddyBtreeFields, version,
-                tokenizerFactory);
+                ioSchedulerProvider.getIOScheduler(ctx), ioOpCallbackFactory, buddyBtreeFields, version);
     }
 
 }
