@@ -56,8 +56,12 @@ public class TOccurrenceSearcher extends AbstractTOccurrenceSearcher {
         }
         int numPrefixLists = searchModifier.getNumPrefixLists(occurrenceThreshold, invListCursors.size());
 
+        //Disjunctive search modifier doesn't need to sort inverted list cursors
+        //since any PK appears in the inverted lists should be included in the output for post-processing 
+        boolean needSortInvListCursors = searchModifier instanceof DisjunctiveSearchModifier ? false : true;
+        
         searchResult.reset();
-        invListMerger.merge(invListCursors, occurrenceThreshold, numPrefixLists, searchResult);
+        invListMerger.merge(invListCursors, occurrenceThreshold, numPrefixLists, searchResult, needSortInvListCursors);
         resultCursor.open(null, searchPred);
     }
 }

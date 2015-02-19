@@ -158,8 +158,11 @@ public class PartitionedTOccurrenceSearcher extends AbstractTOccurrenceSearcher 
             }
             // Merge inverted lists of current partition.
             int numPrefixLists = searchModifier.getNumPrefixLists(occurrenceThreshold, partitionCursors[i].size());
+            //Disjunctive search modifier doesn't need to sort inverted list cursors
+            //since any PK appears in the inverted lists should be included in the output for post-processing 
+            boolean needSortInvListCursors = searchModifier instanceof DisjunctiveSearchModifier ? false : true;
             invListMerger.reset();
-            invListMerger.merge(partitionCursors[i], occurrenceThreshold, numPrefixLists, searchResult);
+            invListMerger.merge(partitionCursors[i], occurrenceThreshold, numPrefixLists, searchResult, needSortInvListCursors);
         }
 
         resultCursor.open(null, searchPred);
