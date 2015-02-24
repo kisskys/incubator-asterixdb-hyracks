@@ -36,6 +36,7 @@ public class HilbertBTreeRangeSearchCursor implements ITreeIndexCursor {
 
     private static final boolean DEBUG = false;
 
+    public static final double COORDINATE_TRANSFORM_DELTA = 180.0;
     private static final int DIMENSION = 2; //Only two dimensional data are supported.
     private static final int MAX_SEARCH_CANDIDATES = 2; //Max number of quadrants to be searched in a level to calculate the next match.  
     private static final int NUM_QUAD = 4; //Total number of quadrants
@@ -106,10 +107,10 @@ public class HilbertBTreeRangeSearchCursor implements ITreeIndexCursor {
         linearizerSearchPredicate = (ILinearizerSearchPredicate) searchPred;
         linearizerSearchHelper = linearizerSearchPredicate.getLinearizerSearchModifier();
 
-        qBottomLeft[0] = linearizerSearchHelper.getQueryBottomLeftX();
-        qBottomLeft[1] = linearizerSearchHelper.getQueryBottomLeftY();
-        qTopRight[0] = linearizerSearchHelper.getQueryTopRightX();
-        qTopRight[1] = linearizerSearchHelper.getQueryTopRightY();
+        qBottomLeft[0] = linearizerSearchHelper.getQueryBottomLeftX() + COORDINATE_TRANSFORM_DELTA;
+        qBottomLeft[1] = linearizerSearchHelper.getQueryBottomLeftY() + COORDINATE_TRANSFORM_DELTA;
+        qTopRight[0] = linearizerSearchHelper.getQueryTopRightX() + COORDINATE_TRANSFORM_DELTA;
+        qTopRight[1] = linearizerSearchHelper.getQueryTopRightY() + COORDINATE_TRANSFORM_DELTA;
 
         if (firstOpen) {
             if (qBottomLeft[0] == qTopRight[0] && qBottomLeft[1] == qTopRight[1]) {
@@ -360,6 +361,12 @@ public class HilbertBTreeRangeSearchCursor implements ITreeIndexCursor {
                 nextMatch[1] = Math.nextAfter(nextMatch[1], currentSearchCtx.centerPoint[1]);
             }
         }
+        
+        nextMatch[0] -= COORDINATE_TRANSFORM_DELTA;
+        nextMatch[1] -= COORDINATE_TRANSFORM_DELTA;
+        if (DEBUG) {
+            System.out.println("nextMatch (" + nextMatch[0] + ", " + nextMatch[1] + ")");
+        }
 
         linearizerSearchHelper.convertTwoDoubles2PointField(nextMatch, tBuilderNextMatch);
         ((ArrayTupleReference) tRefNextMatch).reset(tBuilderNextMatch.getFieldEndOffsets(),
@@ -583,21 +590,21 @@ public class HilbertBTreeRangeSearchCursor implements ITreeIndexCursor {
                 searchedPoint);
 
         if (DEBUG) {
-            if (qBottomLeft[0] <= searchedPoint[0] && qTopRight[0] >= searchedPoint[0]
-                    && qBottomLeft[1] <= searchedPoint[1] && qTopRight[1] >= searchedPoint[1]) {
+            if (qBottomLeft[0] <= searchedPoint[0]+ COORDINATE_TRANSFORM_DELTA && qTopRight[0] >= searchedPoint[0]+ COORDINATE_TRANSFORM_DELTA
+                    && qBottomLeft[1] <= searchedPoint[1]+ COORDINATE_TRANSFORM_DELTA && qTopRight[1] >= searchedPoint[1]+ COORDINATE_TRANSFORM_DELTA) {
                 System.out.println("yes: \t" + searchedPoint[0] + ", " + searchedPoint[1]);
             } else {
                 System.out.println("no : \t" + searchedPoint[0] + ", " + searchedPoint[1]);
             }
         }
 
-        return qBottomLeft[0] <= searchedPoint[0] && qTopRight[0] >= searchedPoint[0]
-                && qBottomLeft[1] <= searchedPoint[1] && qTopRight[1] >= searchedPoint[1];
+        return qBottomLeft[0] <= searchedPoint[0] + COORDINATE_TRANSFORM_DELTA && qTopRight[0] >= searchedPoint[0] + COORDINATE_TRANSFORM_DELTA
+                && qBottomLeft[1] <= searchedPoint[1] + COORDINATE_TRANSFORM_DELTA && qTopRight[1] >= searchedPoint[1] + COORDINATE_TRANSFORM_DELTA;
     }
 
     private void setCurrentPageKey(ITupleReference tuple) throws HyracksDataException {
         linearizerSearchHelper.convertPointField2TwoDoubles(tuple.getFieldData(0), tuple.getFieldStart(0), pageKey);
-        currentSearchCtx.setPageKey(pageKey[0], pageKey[1]);
+        currentSearchCtx.setPageKey(pageKey[0] + COORDINATE_TRANSFORM_DELTA, pageKey[1] + COORDINATE_TRANSFORM_DELTA);
     }
 
     private class HilbertRangeSearchContext {

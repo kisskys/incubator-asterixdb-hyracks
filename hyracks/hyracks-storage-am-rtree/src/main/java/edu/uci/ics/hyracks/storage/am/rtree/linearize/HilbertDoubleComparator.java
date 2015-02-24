@@ -42,14 +42,15 @@ import edu.uci.ics.hyracks.storage.am.rtree.impls.DoublePrimitiveValueProviderFa
  */
 
 public class HilbertDoubleComparator implements ILinearizeComparator {
+    private static final double COORDINATE_TRANSFORM_DELTA = 180.0;
     private final int dim; // dimension
     private final HilbertState[] states;
 
     private double[] bounds;
     private double stepsize;
     private int state;
-    private IntArrayList stateStack = new IntArrayList(1000, 200);
-    private DoubleArrayList boundsStack = new DoubleArrayList(2000, 400);
+    private IntArrayList stateStack = new IntArrayList(1100, 100);
+    private DoubleArrayList boundsStack = new DoubleArrayList(2200, 200);
 
     private IPrimitiveValueProvider valueProvider = DoublePrimitiveValueProviderFactory.INSTANCE
             .createPrimitiveValueProvider();
@@ -79,6 +80,7 @@ public class HilbertDoubleComparator implements ILinearizeComparator {
                 new HilbertState(new int[] { 2, 3, 2, 1 }, new int[] { 2, 3, 1, 0 }),
                 new HilbertState(new int[] { 0, 2, 3, 3 }, new int[] { 0, 3, 1, 2 }) };
 
+        bounds = new double[dim];
         resetStateMachine();
     }
 
@@ -86,7 +88,9 @@ public class HilbertDoubleComparator implements ILinearizeComparator {
         state = 0;
         stateStack.clear();
         stepsize = Double.MAX_VALUE / 2;
-        bounds = new double[dim];
+        for (int i = 0; i < dim; i++) {
+            bounds[i] = 0.0;
+        }
         boundsStack.clear();
     }
 
@@ -180,8 +184,8 @@ public class HilbertDoubleComparator implements ILinearizeComparator {
     @Override
     public int compare(byte[] b1, int s1, int l1, byte[] b2, int s2, int l2) {
         for (int i = 0; i < dim; i++) {
-            a[i] = DoubleSerializerDeserializer.getDouble(b1, s1 + (i * l1));
-            b[i] = DoubleSerializerDeserializer.getDouble(b2, s2 + (i * l2));
+            a[i] = DoubleSerializerDeserializer.getDouble(b1, s1 + (i * l1)) + COORDINATE_TRANSFORM_DELTA;
+            b[i] = DoubleSerializerDeserializer.getDouble(b2, s2 + (i * l2)) + COORDINATE_TRANSFORM_DELTA; 
         }
 
         return compare();
