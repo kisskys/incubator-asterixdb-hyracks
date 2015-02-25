@@ -45,10 +45,8 @@ public class InvertedListMerger {
     }
 
     public void merge(ArrayList<IInvertedListCursor> invListCursors, int occurrenceThreshold, int numPrefixLists,
-            SearchResult searchResult, boolean needSortInvListCursors) throws HyracksDataException, IndexException {
-        if (needSortInvListCursors) {
-            Collections.sort(invListCursors);
-        }
+            SearchResult searchResult) throws HyracksDataException, IndexException {
+        Collections.sort(invListCursors);
         int numInvLists = invListCursors.size();
         SearchResult result = null;
         for (int i = 0; i < numInvLists; i++) {
@@ -237,7 +235,8 @@ public class InvertedListMerger {
         resultFrameTupleAcc.reset(prevCurrentBuffer);
 
         invListHasNext = invListCursor.hasNext();
-        if (invListHasNext) invListCursor.next();
+        if (invListHasNext)
+            invListCursor.next();
 
         while (invListHasNext && resultTidx < resultFrameTupleAcc.getTupleCount()) {
 
@@ -280,7 +279,8 @@ public class InvertedListMerger {
 
             if (advanceCursor) {
                 invListHasNext = invListCursor.hasNext();
-                if(invListHasNext) invListCursor.next();
+                if (invListHasNext)
+                    invListCursor.next();
             }
         }
 
@@ -289,7 +289,8 @@ public class InvertedListMerger {
             ITupleReference invListTuple = invListCursor.getTuple();
             newSearchResult.append(invListTuple, 1);
             invListHasNext = invListCursor.hasNext();
-            if(invListHasNext) invListCursor.next();
+            if (invListHasNext)
+                invListCursor.next();
         }
 
         // append remaining elements from previous result set
