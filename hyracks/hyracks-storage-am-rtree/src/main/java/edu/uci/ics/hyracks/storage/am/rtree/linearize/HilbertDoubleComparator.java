@@ -17,10 +17,8 @@ package edu.uci.ics.hyracks.storage.am.rtree.linearize;
 import edu.uci.ics.hyracks.api.dataflow.value.ILinearizeComparator;
 import edu.uci.ics.hyracks.data.std.primitive.DoublePointable;
 import edu.uci.ics.hyracks.dataflow.common.data.marshalling.DoubleSerializerDeserializer;
-import edu.uci.ics.hyracks.storage.am.common.api.IPrimitiveValueProvider;
 import edu.uci.ics.hyracks.storage.am.common.ophelpers.DoubleArrayList;
 import edu.uci.ics.hyracks.storage.am.common.ophelpers.IntArrayList;
-import edu.uci.ics.hyracks.storage.am.rtree.impls.DoublePrimitiveValueProviderFactory;
 
 /*
  * This compares two points based on the hilbert curve. Currently, it only supports
@@ -42,7 +40,7 @@ import edu.uci.ics.hyracks.storage.am.rtree.impls.DoublePrimitiveValueProviderFa
  */
 
 public class HilbertDoubleComparator implements ILinearizeComparator {
-    private static final double COORDINATE_TRANSFORM_DELTA = 180.0;
+    private static final double INITIAL_STEP_SIZE = Double.MAX_VALUE / 2;
     private final int dim; // dimension
     private final HilbertState[] states;
 
@@ -51,9 +49,6 @@ public class HilbertDoubleComparator implements ILinearizeComparator {
     private int state;
     private IntArrayList stateStack = new IntArrayList(1100, 100);
     private DoubleArrayList boundsStack = new DoubleArrayList(2200, 200);
-
-    private IPrimitiveValueProvider valueProvider = DoublePrimitiveValueProviderFactory.INSTANCE
-            .createPrimitiveValueProvider();
 
     private double[] a;
     private double[] b;
@@ -87,7 +82,7 @@ public class HilbertDoubleComparator implements ILinearizeComparator {
     private void resetStateMachine() {
         state = 0;
         stateStack.clear();
-        stepsize = Double.MAX_VALUE / 2;
+        stepsize = INITIAL_STEP_SIZE;
         for (int i = 0; i < dim; i++) {
             bounds[i] = 0.0;
         }
@@ -184,8 +179,8 @@ public class HilbertDoubleComparator implements ILinearizeComparator {
     @Override
     public int compare(byte[] b1, int s1, int l1, byte[] b2, int s2, int l2) {
         for (int i = 0; i < dim; i++) {
-            a[i] = DoubleSerializerDeserializer.getDouble(b1, s1 + (i * l1)) + COORDINATE_TRANSFORM_DELTA;
-            b[i] = DoubleSerializerDeserializer.getDouble(b2, s2 + (i * l2)) + COORDINATE_TRANSFORM_DELTA; 
+            a[i] = DoubleSerializerDeserializer.getDouble(b1, s1 + (i * l1));
+            b[i] = DoubleSerializerDeserializer.getDouble(b2, s2 + (i * l2));
         }
 
         return compare();
