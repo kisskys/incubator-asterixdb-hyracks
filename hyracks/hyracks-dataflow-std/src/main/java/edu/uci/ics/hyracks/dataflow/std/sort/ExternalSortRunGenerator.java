@@ -26,6 +26,9 @@ import edu.uci.ics.hyracks.api.dataflow.value.INormalizedKeyComputerFactory;
 import edu.uci.ics.hyracks.api.dataflow.value.RecordDescriptor;
 import edu.uci.ics.hyracks.api.exceptions.HyracksDataException;
 import edu.uci.ics.hyracks.api.io.FileReference;
+import edu.uci.ics.hyracks.api.util.ExperimentProfiler;
+import edu.uci.ics.hyracks.api.util.SpatialIndexProfiler;
+import edu.uci.ics.hyracks.dataflow.common.comm.io.FrameTupleAccessor;
 import edu.uci.ics.hyracks.dataflow.common.io.RunFileWriter;
 
 public class ExternalSortRunGenerator implements IFrameWriter {
@@ -33,6 +36,10 @@ public class ExternalSortRunGenerator implements IFrameWriter {
     private final IFrameSorter frameSorter;
     private final List<IFrameReader> runs;
     private final int maxSortFrames;
+    
+    //profiler
+    private FrameTupleAccessor profilerFta;
+    private long profilerTupleCount;
 
     public ExternalSortRunGenerator(IHyracksTaskContext ctx, int[] sortFields,
             INormalizedKeyComputerFactory firstKeyNormalizerFactory, IBinaryComparatorFactory[] comparatorFactories,
@@ -47,6 +54,11 @@ public class ExternalSortRunGenerator implements IFrameWriter {
         }
         runs = new LinkedList<IFrameReader>();
         maxSortFrames = framesLimit - 1;
+        
+        if (ExperimentProfiler.PROFILE_MODE) {
+            profilerFta = new FrameTupleAccessor(ctx.getFrameSize(), recordDesc);
+            profilerTupleCount = 0;
+        }
     }
 
     @Override
@@ -60,6 +72,12 @@ public class ExternalSortRunGenerator implements IFrameWriter {
         if (frameSorter.getFrameCount() >= maxSortFrames) {
             flushFramesToRun();
         }
+        
+        if (ExperimentProfiler.PROFILE_MODE) {
+            profilerFta.reset(buffer);
+            profilerTupleCount += profilerFta.getTupleCount();
+        }
+        
         frameSorter.insertFrame(buffer);
     }
 
@@ -71,6 +89,11 @@ public class ExternalSortRunGenerator implements IFrameWriter {
             } else {
                 flushFramesToRun();
             }
+        }
+        
+        if (ExperimentProfiler.PROFILE_MODE) {
+            SpatialIndexProfiler.INSTANCE.falsePositivePerQuery.add(""+profilerTupleCount+"\n");
+            profilerTupleCount = 0;
         }
     }
 

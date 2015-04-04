@@ -45,6 +45,7 @@ public class TokenizeOperator extends AbstractLogicalOperator {
     // contains the type for each variable in the tokenizeVars
     private final List<Object> tokenizeVarTypes;
     private List<Mutable<ILogicalExpression>> additionalFilteringExpressions;
+    private final boolean isQuery;
 
     public TokenizeOperator(IDataSourceIndex<?, ?> dataSourceIndex,
             List<Mutable<ILogicalExpression>> primaryKeyExprs,
@@ -52,7 +53,7 @@ public class TokenizeOperator extends AbstractLogicalOperator {
             List<LogicalVariable> tokenizeVars,
             Mutable<ILogicalExpression> filterExpr, Kind operation,
             boolean bulkload, boolean isPartitioned,
-            List<Object> tokenizeVarTypes) {
+            List<Object> tokenizeVarTypes, boolean isQuery) {
         this.dataSourceIndex = dataSourceIndex;
         this.primaryKeyExprs = primaryKeyExprs;
         this.secondaryKeyExprs = secondaryKeyExprs;
@@ -62,6 +63,7 @@ public class TokenizeOperator extends AbstractLogicalOperator {
         this.bulkload = bulkload;
         this.isPartitioned = isPartitioned;
         this.tokenizeVarTypes = tokenizeVarTypes;
+        this.isQuery = isQuery;
     }
 
     @Override
@@ -185,6 +187,10 @@ public class TokenizeOperator extends AbstractLogicalOperator {
 
     public List<Mutable<ILogicalExpression>> getAdditionalFilteringExpressions() {
         return additionalFilteringExpressions;
+    }
+    
+    public boolean isQuery() {
+        return isQuery;
     }
 
 }

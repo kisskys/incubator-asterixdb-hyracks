@@ -18,10 +18,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.HashSet;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -35,6 +35,8 @@ import edu.uci.ics.hyracks.api.io.FileReference;
 import edu.uci.ics.hyracks.api.io.IFileHandle;
 import edu.uci.ics.hyracks.api.io.IIOManager;
 import edu.uci.ics.hyracks.api.lifecycle.ILifeCycleComponent;
+import edu.uci.ics.hyracks.api.util.ExperimentProfiler;
+import edu.uci.ics.hyracks.api.util.SpatialIndexProfiler;
 import edu.uci.ics.hyracks.storage.common.file.BufferedFileHandle;
 import edu.uci.ics.hyracks.storage.common.file.IFileMapManager;
 
@@ -59,6 +61,9 @@ public class BufferCache implements IBufferCacheInternal, ILifeCycleComponent {
     private List<ICachedPageInternal> cachedPages = new ArrayList<ICachedPageInternal>();
 
     private boolean closed;
+    
+    //for profiler
+    public static long profilerCacheMiss;
 
     public BufferCache(IIOManager ioManager, IPageReplacementStrategy pageReplacementStrategy,
             IPageCleanerPolicy pageCleanerPolicy, IFileMapManager fileMapManager, int maxOpenFiles,
@@ -81,6 +86,10 @@ public class BufferCache implements IBufferCacheInternal, ILifeCycleComponent {
         cleanerThread = new CleanerThread();
         executor.execute(cleanerThread);
         closed = false;
+        
+        if (ExperimentProfiler.PROFILE_MODE) {
+            profilerCacheMiss = 0;
+        }
     }
 
     @Override
@@ -147,6 +156,9 @@ public class BufferCache implements IBufferCacheInternal, ILifeCycleComponent {
                 if (!cPage.valid) {
                     read(cPage);
                     cPage.valid = true;
+                    if (ExperimentProfiler.PROFILE_MODE) {
+                        ++profilerCacheMiss;
+                    }
                 }
             }
         } else {

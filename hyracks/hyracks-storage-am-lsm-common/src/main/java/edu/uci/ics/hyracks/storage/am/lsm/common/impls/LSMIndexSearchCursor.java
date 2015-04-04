@@ -113,11 +113,13 @@ public abstract class LSMIndexSearchCursor implements ITreeIndexCursor {
     @Override
     public void close() throws HyracksDataException {
         try {
-            outputPriorityQueue.clear();
-            for (int i = 0; i < rangeCursors.length; i++) {
-                rangeCursors[i].close();
+            if (outputPriorityQueue != null) {
+                outputPriorityQueue.clear();
+                for (int i = 0; i < rangeCursors.length; i++) {
+                    rangeCursors[i].close();
+                }
+                rangeCursors = null;
             }
-            rangeCursors = null;
         } finally {
             if (lsmHarness != null) {
                 lsmHarness.endSearch(opCtx);
@@ -263,7 +265,7 @@ public abstract class LSMIndexSearchCursor implements ITreeIndexCursor {
     protected int compare(MultiComparator cmp, ITupleReference tupleA, ITupleReference tupleB) {
         return cmp.compare(tupleA, tupleB);
     }
-    
+
     @Override
     public void markCurrentTupleAsUpdated() throws HyracksDataException {
         throw new HyracksDataException("Updating tuples is not supported with this cursor.");

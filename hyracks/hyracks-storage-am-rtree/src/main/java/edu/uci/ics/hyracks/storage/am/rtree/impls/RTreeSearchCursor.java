@@ -16,6 +16,8 @@
 package edu.uci.ics.hyracks.storage.am.rtree.impls;
 
 import edu.uci.ics.hyracks.api.exceptions.HyracksDataException;
+import edu.uci.ics.hyracks.api.util.ExperimentProfiler;
+import edu.uci.ics.hyracks.api.util.SpatialIndexProfiler;
 import edu.uci.ics.hyracks.dataflow.common.data.accessors.ITupleReference;
 import edu.uci.ics.hyracks.storage.am.common.api.ICursorInitialState;
 import edu.uci.ics.hyracks.storage.am.common.api.ISearchPredicate;
@@ -50,6 +52,9 @@ public class RTreeSearchCursor implements ITreeIndexCursor {
 
     private ITreeIndexTupleReference frameTuple;
     private boolean readLatched = false;
+    
+    //for profiler
+    private int profilerLeafPageFetchCount;
 
     public RTreeSearchCursor(IRTreeInteriorFrame interiorFrame, IRTreeLeafFrame leafFrame) {
         this.interiorFrame = interiorFrame;
@@ -96,6 +101,12 @@ public class RTreeSearchCursor implements ITreeIndexCursor {
             readLatched = false;
         }
 
+        if (ExperimentProfiler.PROFILE_MODE) {
+            if (!pathList.isEmpty()) {
+                ++profilerLeafPageFetchCount;
+            }
+        }
+        
         while (!pathList.isEmpty()) {
             int pageId = pathList.getLastPageId();
             long parentLsn = pathList.getLastPageLsn();
@@ -160,11 +171,19 @@ public class RTreeSearchCursor implements ITreeIndexCursor {
     @Override
     public boolean hasNext() throws HyracksDataException {
         if (page == null) {
+            if (ExperimentProfiler.PROFILE_MODE) {
+                SpatialIndexProfiler.INSTANCE.rtreeNumOfSearchPerQuery.add(""+profilerLeafPageFetchCount+"\n");
+                profilerLeafPageFetchCount = 0;
+            }
             return false;
         }
 
         if (tupleIndex == leafFrame.getTupleCount()) {
             if (!fetchNextLeafPage()) {
+                if (ExperimentProfiler.PROFILE_MODE) {
+                    SpatialIndexProfiler.INSTANCE.rtreeNumOfSearchPerQuery.add(""+profilerLeafPageFetchCount+"\n");
+                    profilerLeafPageFetchCount = 0;
+                }
                 return false;
             }
         }
@@ -189,6 +208,10 @@ public class RTreeSearchCursor implements ITreeIndexCursor {
                 }
             }
         } while (fetchNextLeafPage());
+        if (ExperimentProfiler.PROFILE_MODE) {
+            SpatialIndexProfiler.INSTANCE.rtreeNumOfSearchPerQuery.add(""+profilerLeafPageFetchCount+"\n");
+            profilerLeafPageFetchCount = 0;
+        }
         return false;
     }
 
@@ -205,6 +228,10 @@ public class RTreeSearchCursor implements ITreeIndexCursor {
             readLatched = false;
             bufferCache.unpin(this.page);
             pathList.clear();
+        }
+        
+        if (ExperimentProfiler.PROFILE_MODE) {
+            profilerLeafPageFetchCount = 0;
         }
 
         pathList = ((RTreeCursorInitialState) initialState).getPathList();

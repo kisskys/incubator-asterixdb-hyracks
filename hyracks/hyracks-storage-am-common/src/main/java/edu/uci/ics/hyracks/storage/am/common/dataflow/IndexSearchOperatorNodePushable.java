@@ -23,6 +23,9 @@ import edu.uci.ics.hyracks.api.dataflow.value.INullWriter;
 import edu.uci.ics.hyracks.api.dataflow.value.IRecordDescriptorProvider;
 import edu.uci.ics.hyracks.api.dataflow.value.RecordDescriptor;
 import edu.uci.ics.hyracks.api.exceptions.HyracksDataException;
+import edu.uci.ics.hyracks.api.util.ExperimentProfiler;
+import edu.uci.ics.hyracks.api.util.SpatialIndexProfiler;
+import edu.uci.ics.hyracks.api.util.StopWatch;
 import edu.uci.ics.hyracks.dataflow.common.comm.io.ArrayTupleBuilder;
 import edu.uci.ics.hyracks.dataflow.common.comm.io.FrameTupleAccessor;
 import edu.uci.ics.hyracks.dataflow.common.comm.io.FrameTupleAppender;
@@ -38,6 +41,7 @@ import edu.uci.ics.hyracks.storage.am.common.api.ISearchOperationCallback;
 import edu.uci.ics.hyracks.storage.am.common.api.ISearchPredicate;
 import edu.uci.ics.hyracks.storage.am.common.impls.NoOpOperationCallback;
 import edu.uci.ics.hyracks.storage.am.common.tuples.PermutingFrameTupleReference;
+import edu.uci.ics.hyracks.storage.common.buffercache.BufferCache;
 
 public abstract class IndexSearchOperatorNodePushable extends AbstractUnaryInputUnaryOutputOperatorNodePushable {
     protected final IIndexOperatorDescriptor opDesc;
@@ -67,6 +71,11 @@ public abstract class IndexSearchOperatorNodePushable extends AbstractUnaryInput
     protected final int[] maxFilterFieldIndexes;
     protected PermutingFrameTupleReference minFilterKey;
     protected PermutingFrameTupleReference maxFilterKey;
+    
+    //for profiler
+    private StopWatch profilerSW;
+    private long profilerCacheMissTemp;
+    private long profilerCacheMissTotalPerQuery;
 
     public IndexSearchOperatorNodePushable(IIndexOperatorDescriptor opDesc, IHyracksTaskContext ctx, int partition,
             IRecordDescriptorProvider recordDescProvider, int[] minFilterFieldIndexes, int[] maxFilterFieldIndexes) {
@@ -88,6 +97,10 @@ public abstract class IndexSearchOperatorNodePushable extends AbstractUnaryInput
         if (maxFilterFieldIndexes != null && maxFilterFieldIndexes.length > 0) {
             maxFilterKey = new PermutingFrameTupleReference();
             maxFilterKey.setFieldPermutation(maxFilterFieldIndexes);
+        }
+        
+        if (ExperimentProfiler.PROFILE_MODE) {
+            profilerSW = new StopWatch();
         }
     }
 
@@ -142,6 +155,12 @@ public abstract class IndexSearchOperatorNodePushable extends AbstractUnaryInput
             indexHelper.close();
             throw new HyracksDataException(e);
         }
+        
+        if (ExperimentProfiler.PROFILE_MODE) {
+            profilerSW.start();
+            profilerCacheMissTemp = 0;
+            profilerCacheMissTotalPerQuery = 0;
+        }
     }
 
     protected void writeSearchResults(int tupleIndex) throws Exception {
@@ -188,6 +207,12 @@ public abstract class IndexSearchOperatorNodePushable extends AbstractUnaryInput
 
     @Override
     public void nextFrame(ByteBuffer buffer) throws HyracksDataException {
+        
+        if(ExperimentProfiler.PROFILE_MODE) {
+            profilerSW.resume();
+            profilerCacheMissTemp = BufferCache.profilerCacheMiss;
+        }
+        
         accessor.reset(buffer);
         int tupleCount = accessor.getTupleCount();
         try {
@@ -199,6 +224,11 @@ public abstract class IndexSearchOperatorNodePushable extends AbstractUnaryInput
             }
         } catch (Exception e) {
             throw new HyracksDataException(e);
+        }
+        
+        if(ExperimentProfiler.PROFILE_MODE) {
+            profilerSW.stop();
+            profilerCacheMissTotalPerQuery += BufferCache.profilerCacheMiss - profilerCacheMissTemp;
         }
     }
 
@@ -216,6 +246,11 @@ public abstract class IndexSearchOperatorNodePushable extends AbstractUnaryInput
             }
         } finally {
             indexHelper.close();
+        }
+        
+        if(ExperimentProfiler.PROFILE_MODE) {
+            SpatialIndexProfiler.INSTANCE.pidxSearchTimePerQuery.add("" + profilerSW.getElapsedTime() + "\n");
+            SpatialIndexProfiler.INSTANCE.cacheMissPerQuery.add("" + profilerCacheMissTotalPerQuery + "\n");
         }
     }
 

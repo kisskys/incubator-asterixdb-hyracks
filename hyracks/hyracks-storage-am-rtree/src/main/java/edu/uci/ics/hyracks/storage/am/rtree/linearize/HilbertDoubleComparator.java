@@ -40,7 +40,7 @@ import edu.uci.ics.hyracks.storage.am.common.ophelpers.IntArrayList;
  */
 
 public class HilbertDoubleComparator implements ILinearizeComparator {
-    private static final double INITIAL_STEP_SIZE = Double.MAX_VALUE / 2;
+    private static final double INITIAL_STEP_SIZE = 90.0d;
     private final int dim; // dimension
     private final HilbertState[] states;
 
@@ -98,48 +98,50 @@ public class HilbertDoubleComparator implements ILinearizeComparator {
         if (equal)
             return 0;
 
+        resetStateMachine();
+        
         // We keep the state of the state machine after a comparison. In most
         // cases,
         // the needed zoom factor is close to the old one. In this step, we
         // check if we have
         // to zoom out
-        while (true) {
-            if (stateStack.size() <= dim) {
-                resetStateMachine();
-                break;
-            }
-            boolean zoomOut = false;
-            for (int i = 0; i < dim; i++) {
-                if (Math.min(a[i], b[i]) <= bounds[i] - 2 * stepsize
-                        || Math.max(a[i], b[i]) >= bounds[i] + 2 * stepsize) {
-                    zoomOut = true;
-                    break;
-                }
-            }
-            state = stateStack.getLast();
-            stateStack.removeLast();
-            for (int j = dim - 1; j >= 0; j--) {
-                bounds[j] = boundsStack.getLast();
-                boundsStack.removeLast();
-            }
-            stepsize *= 2;
-            if (!zoomOut) {
-                state = stateStack.getLast();
-                stateStack.removeLast();
-                for (int j = dim - 1; j >= 0; j--) {
-                    bounds[j] = boundsStack.getLast();
-                    boundsStack.removeLast();
-                }
-                stepsize *= 2;
-                break;
-            }
-        }
+//        while (true) {
+//            if (stateStack.size() <= dim) {
+//                resetStateMachine();
+//                break;
+//            }
+//            boolean zoomOut = false;
+//            for (int i = 0; i < dim; i++) {
+//                if (Math.min(a[i], b[i]) <= bounds[i] - 2 * stepsize
+//                        || Math.max(a[i], b[i]) >= bounds[i] + 2 * stepsize) {
+//                    zoomOut = true;
+//                    break;
+//                }
+//            }
+//            state = stateStack.getLast();
+//            stateStack.removeLast();
+//            for (int j = dim - 1; j >= 0; j--) {
+//                bounds[j] = boundsStack.getLast();
+//                boundsStack.removeLast();
+//            }
+//            stepsize *= 2;
+//            if (!zoomOut) {
+//                state = stateStack.getLast();
+//                stateStack.removeLast();
+//                for (int j = dim - 1; j >= 0; j--) {
+//                    bounds[j] = boundsStack.getLast();
+//                    boundsStack.removeLast();
+//                }
+//                stepsize *= 2;
+//                break;
+//            }
+//        }
 
         while (true) {
-            stateStack.add(state);
-            for (int j = 0; j < dim; j++) {
-                boundsStack.add(bounds[j]);
-            }
+//            stateStack.add(state);
+//            for (int j = 0; j < dim; j++) {
+//                boundsStack.add(bounds[j]);
+//            }
 
             // Find the quadrant in which A and B are
             int quadrantA = 0, quadrantB = 0;
