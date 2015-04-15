@@ -324,7 +324,7 @@ public class LSMRTree extends AbstractLSMRTree {
     }
 
     @Override
-    public void scheduleMerge(ILSMIndexOperationContext ctx, ILSMIOOperationCallback callback)
+    public void scheduleMerge(ILSMIndexOperationContext ctx, ILSMIOOperationCallback callback, Object mergePolicyInfo)
             throws HyracksDataException, IndexException {
         ILSMIndexOperationContext rctx = createOpContext(NoOpOperationCallback.INSTANCE);
         rctx.setOperation(IndexOperation.MERGE);
@@ -335,7 +335,7 @@ public class LSMRTree extends AbstractLSMRTree {
         ioScheduler.scheduleOperation(new LSMRTreeMergeOperation((ILSMIndexAccessorInternal) accessor,
                 mergingComponents, cursor, relMergeFileRefs.getInsertIndexFileReference(), relMergeFileRefs
                         .getDeleteIndexFileReference(), relMergeFileRefs.getBloomFilterFileReference(), callback,
-                fileManager.getBaseDir()));
+                fileManager.getBaseDir(), mergePolicyInfo));
     }
 
     @Override
@@ -349,6 +349,7 @@ public class LSMRTree extends AbstractLSMRTree {
 
         LSMRTreeDiskComponent mergedComponent = createDiskComponent(componentFactory, mergeOp.getRTreeMergeTarget(),
                 mergeOp.getBTreeMergeTarget(), mergeOp.getBloomFilterMergeTarget(), true);
+        mergedComponent.setMergePolicyInfo(mergeOp.getMergePolicyInfo());
 
         // In case we must keep the deleted-keys BTrees, then they must be merged *before* merging the r-trees so that
         // lsmHarness.endSearch() is called once when the r-trees have been merged.

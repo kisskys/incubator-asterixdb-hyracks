@@ -175,6 +175,7 @@ public interface IMetadataProvider<S, I> {
      *            Job generation context.
      * @param spec
      *            Target job specification.
+     * @param isBulkload TODO
      * @param isQuery TODO
      * @return
      *         A Hyracks IOperatorDescriptor and its partition constraint.
@@ -184,7 +185,7 @@ public interface IMetadataProvider<S, I> {
             IDataSourceIndex<I, S> dataSource, IOperatorSchema propagatedSchema, IOperatorSchema[] inputSchemas,
             IVariableTypeEnvironment typeEnv, List<LogicalVariable> primaryKeys, List<LogicalVariable> secondaryKeys,
             ILogicalExpression filterExpr, RecordDescriptor recordDesc,
-            JobGenContext context, JobSpecification spec, boolean isQuery) throws AlgebricksException;
+            JobGenContext context, JobSpecification spec, boolean isBulkload, boolean isQuery) throws AlgebricksException;
 
     public IDataSourceIndex<I, S> findDataSourceIndex(I indexId, S dataSourceId) throws AlgebricksException;
 

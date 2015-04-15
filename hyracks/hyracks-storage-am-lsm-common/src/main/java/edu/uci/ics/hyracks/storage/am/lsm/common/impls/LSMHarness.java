@@ -184,14 +184,14 @@ public class LSMHarness implements ILSMHarness {
                         // newComponent is null if the flush op. was not performed.
                         if (newComponent != null) {
                             lsmIndex.addComponent(newComponent);
-                            mergePolicy.diskComponentAdded(lsmIndex, false);
+                            mergePolicy.diskComponentAdded(lsmIndex, false, (AbstractDiskLSMComponent)newComponent);
                         }
                         break;
                     case MERGE:
                         // newComponent is null if the merge op. was not performed.
                         if (newComponent != null) {
                             lsmIndex.subsumeMergedComponents(newComponent, ctx.getComponentHolder());
-                            mergePolicy.diskComponentAdded(lsmIndex, fullMergeIsRequested.get());
+                            mergePolicy.diskComponentAdded(lsmIndex, fullMergeIsRequested.get(), (AbstractDiskLSMComponent)newComponent);
                         }
                         break;
                     default:
@@ -302,13 +302,13 @@ public class LSMHarness implements ILSMHarness {
     }
 
     @Override
-    public void scheduleMerge(ILSMIndexOperationContext ctx, ILSMIOOperationCallback callback)
+    public void scheduleMerge(ILSMIndexOperationContext ctx, ILSMIOOperationCallback callback, Object mergePolicyInfo)
             throws HyracksDataException, IndexException {
         if (!getAndEnterComponents(ctx, LSMOperationType.MERGE, true)) {
             callback.afterFinalize(LSMOperationType.MERGE, null);
             return;
         }
-        lsmIndex.scheduleMerge(ctx, callback);
+        lsmIndex.scheduleMerge(ctx, callback, mergePolicyInfo);
     }
 
     @Override
@@ -322,7 +322,7 @@ public class LSMHarness implements ILSMHarness {
             return;
         }
         fullMergeIsRequested.set(false);
-        lsmIndex.scheduleMerge(ctx, callback);
+        lsmIndex.scheduleMerge(ctx, callback, null);
     }
 
     @Override
@@ -350,7 +350,7 @@ public class LSMHarness implements ILSMHarness {
     public void addBulkLoadedComponent(ILSMComponent c) throws HyracksDataException, IndexException {
         lsmIndex.markAsValid(c);
         lsmIndex.addComponent(c);
-        mergePolicy.diskComponentAdded(lsmIndex, false);
+        mergePolicy.diskComponentAdded(lsmIndex, false, (AbstractDiskLSMComponent)c);
     }
 
     @Override

@@ -46,9 +46,12 @@ public class BinaryTokenizerOperatorDescriptor extends AbstractSingleActivityOpe
     // This variable's value enforces the number of IBinaryTokenizer.next() call per IBinaryTokenizer.hasNext() only if the hasNext() returns true.
     // For example, if this value is 2, then next() must be called twice per hasNext(). 
     private final int numTokensPerOutputRecord;
+    //Indicates whether frame should be flushed immediately.
+    private final boolean flushFramesRapidly;
 
     public BinaryTokenizerOperatorDescriptor(IOperatorDescriptorRegistry spec, RecordDescriptor recDesc,
-            IBinaryTokenizerFactory tokenizerFactory, int docField, int[] keyFields, boolean addNumTokensKey, boolean writeKeyFieldsFirst, int numTokensPerOutputRecord) {
+            IBinaryTokenizerFactory tokenizerFactory, int docField, int[] keyFields, boolean addNumTokensKey,
+            boolean writeKeyFieldsFirst, int numTokensPerOutputRecord, boolean flushFramesRapidly) {
         super(spec, 1, 1);
         this.tokenizerFactory = tokenizerFactory;
         this.docField = docField;
@@ -57,6 +60,7 @@ public class BinaryTokenizerOperatorDescriptor extends AbstractSingleActivityOpe
         recordDescriptors[0] = recDesc;
         this.writeKeyFieldsFirst = writeKeyFieldsFirst;
         this.numTokensPerOutputRecord = numTokensPerOutputRecord;
+        this.flushFramesRapidly = flushFramesRapidly;
     }
 
     @Override
@@ -64,6 +68,6 @@ public class BinaryTokenizerOperatorDescriptor extends AbstractSingleActivityOpe
             IRecordDescriptorProvider recordDescProvider, int partition, int nPartitions) throws HyracksDataException {
         return new BinaryTokenizerOperatorNodePushable(ctx, recordDescProvider.getInputRecordDescriptor(
                 getActivityId(), 0), recordDescriptors[0], tokenizerFactory.createTokenizer(), docField, keyFields,
-                addNumTokensKey, writeKeyFieldsFirst, numTokensPerOutputRecord);
+                addNumTokensKey, writeKeyFieldsFirst, numTokensPerOutputRecord, flushFramesRapidly);
     }
 }

@@ -106,7 +106,7 @@ public class LSMBTreeTestWorker extends AbstractIndexTestWorker {
                 break;
 
             case MERGE:
-                accessor.scheduleMerge(NoOpIOOperationCallback.INSTANCE, lsmBTree.getImmutableComponents());
+                accessor.scheduleMerge(NoOpIOOperationCallback.INSTANCE, lsmBTree.getImmutableComponents(), null);
                 break;
 
             default:

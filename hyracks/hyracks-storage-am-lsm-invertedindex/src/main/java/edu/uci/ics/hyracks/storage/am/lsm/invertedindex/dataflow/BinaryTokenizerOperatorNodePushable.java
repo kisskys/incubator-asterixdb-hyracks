@@ -41,6 +41,7 @@ public class BinaryTokenizerOperatorNodePushable extends AbstractUnaryInputUnary
     private final RecordDescriptor inputRecDesc;
     private final RecordDescriptor outputRecDesc;
     private final int numTokensPerOutputRecord;
+    private final boolean flushFramesRapidly;
 
     private FrameTupleAccessor accessor;
     private ArrayTupleBuilder builder;
@@ -48,9 +49,10 @@ public class BinaryTokenizerOperatorNodePushable extends AbstractUnaryInputUnary
     private FrameTupleAppender appender;
     private ByteBuffer writeBuffer;
 
+
     public BinaryTokenizerOperatorNodePushable(IHyracksTaskContext ctx, RecordDescriptor inputRecDesc,
             RecordDescriptor outputRecDesc, IBinaryTokenizer tokenizer, int docField, int[] keyFields,
-            boolean addNumTokensKey, boolean writeKeyFieldsFirst, int numTokensPerOutputRecord) {
+            boolean addNumTokensKey, boolean writeKeyFieldsFirst, int numTokensPerOutputRecord, boolean flushFramesRapidly) {
         this.ctx = ctx;
         this.tokenizer = tokenizer;
         this.docField = docField;
@@ -60,6 +62,7 @@ public class BinaryTokenizerOperatorNodePushable extends AbstractUnaryInputUnary
         this.outputRecDesc = outputRecDesc;
         this.writeKeyFieldsFirst = writeKeyFieldsFirst;
         this.numTokensPerOutputRecord = numTokensPerOutputRecord;
+        this.flushFramesRapidly = flushFramesRapidly;
     }
 
     @Override
@@ -167,7 +170,11 @@ public class BinaryTokenizerOperatorNodePushable extends AbstractUnaryInputUnary
 
             }//end while
         }//end for
-
+        
+        if (flushFramesRapidly && appender.getTupleCount() > 0) {
+            FrameUtils.flushFrame(writeBuffer, writer);
+            appender.reset(writeBuffer, true);
+        }
     }
 
     @Override

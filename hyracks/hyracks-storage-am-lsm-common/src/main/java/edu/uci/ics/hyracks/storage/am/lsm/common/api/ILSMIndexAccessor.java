@@ -32,7 +32,7 @@ import edu.uci.ics.hyracks.storage.am.common.api.IndexException;
 public interface ILSMIndexAccessor extends IIndexAccessor {
     public void scheduleFlush(ILSMIOOperationCallback callback) throws HyracksDataException;
 
-    public void scheduleMerge(ILSMIOOperationCallback callback, List<ILSMComponent> components)
+    public void scheduleMerge(ILSMIOOperationCallback callback, List<ILSMComponent> components, Object mergePolicyInfo)
             throws HyracksDataException, IndexException;
 
     public void scheduleFullMerge(ILSMIOOperationCallback callback) throws HyracksDataException, IndexException;

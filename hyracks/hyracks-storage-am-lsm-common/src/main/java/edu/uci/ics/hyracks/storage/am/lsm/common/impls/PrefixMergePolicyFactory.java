@@ -36,6 +36,7 @@ public class PrefixMergePolicyFactory implements ILSMMergePolicyFactory {
     @Override
     public ILSMMergePolicy createMergePolicy(Map<String, String> properties, IHyracksTaskContext ctx) {
         ILSMMergePolicy policy = new PrefixMergePolicy();
+        //ILSMMergePolicy policy = new ExponentialMergePolicy();
         policy.configure(properties);
         return policy;
     }
@@ -53,6 +54,7 @@ public class PrefixMergePolicyFactory implements ILSMMergePolicyFactory {
     @Override
     public ILSMMergePolicy createMergePolicy(Map<String, String> properties, IIndexLifecycleManager ilcm) {
         ILSMMergePolicy policy = new PrefixMergePolicy();
+        //ILSMMergePolicy policy = new ExponentialMergePolicy();
         policy.configure(properties);
         return policy;
     }

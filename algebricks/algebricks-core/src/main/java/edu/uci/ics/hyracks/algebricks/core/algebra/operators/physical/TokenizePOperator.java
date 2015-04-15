@@ -71,7 +71,7 @@ public class TokenizePOperator extends AbstractPhysicalOperator {
         Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> runtimeAndConstraints = null;
         runtimeAndConstraints = mp.getTokenizerRuntime(
                 dataSourceIndex, propagatedSchema, inputSchemas, typeEnv, primaryKeys, secondaryKeys, null, inputDesc,
-                context, spec, tokenizeOp.isQuery());
+                context, spec, tokenizeOp.isBulkload(), tokenizeOp.isQuery());
         
         builder.contributeHyracksOperator(tokenizeOp, runtimeAndConstraints.first);
         builder.contributeAlgebricksPartitionConstraint(runtimeAndConstraints.first, runtimeAndConstraints.second);

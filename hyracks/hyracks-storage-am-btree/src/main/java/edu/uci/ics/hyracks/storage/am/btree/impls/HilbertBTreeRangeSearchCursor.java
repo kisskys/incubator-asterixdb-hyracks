@@ -116,7 +116,7 @@ public class HilbertBTreeRangeSearchCursor implements ITreeIndexCursor {
         tRefNextMatch = ((RangePredicate) searchPred).getLowKey();
 
         linearizerSearchPredicate = (ILinearizerSearchPredicate) searchPred;
-        linearizerSearchHelper = linearizerSearchPredicate.getLinearizerSearchModifier();
+        linearizerSearchHelper = linearizerSearchPredicate.getLinearizerSearchHelper();
 
         qBottomLeft[0] = linearizerSearchHelper.getQueryBottomLeftX();
         qBottomLeft[1] = linearizerSearchHelper.getQueryBottomLeftY();

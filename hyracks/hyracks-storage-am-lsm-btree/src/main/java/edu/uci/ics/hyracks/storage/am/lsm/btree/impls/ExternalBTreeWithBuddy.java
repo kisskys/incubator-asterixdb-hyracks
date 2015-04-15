@@ -354,7 +354,7 @@ public class ExternalBTreeWithBuddy extends AbstractLSMIndex implements ITreeInd
     }
 
     @Override
-    public void scheduleMerge(ILSMIndexOperationContext ctx, ILSMIOOperationCallback callback)
+    public void scheduleMerge(ILSMIndexOperationContext ctx, ILSMIOOperationCallback callback, Object mergePolicyInfo)
             throws HyracksDataException, IndexException {
         ILSMIndexOperationContext bctx = createOpContext(NoOpOperationCallback.INSTANCE, 0);
         bctx.setOperation(IndexOperation.MERGE);
@@ -378,7 +378,7 @@ public class ExternalBTreeWithBuddy extends AbstractLSMIndex implements ITreeInd
         ioScheduler.scheduleOperation(new LSMBTreeWithBuddyMergeOperation((ILSMIndexAccessorInternal) accessor,
                 mergingComponents, cursor, relMergeFileRefs.getInsertIndexFileReference(), relMergeFileRefs
                         .getDeleteIndexFileReference(), relMergeFileRefs.getBloomFilterFileReference(), callback,
-                fileManager.getBaseDir(), keepDeleteTuples));
+                fileManager.getBaseDir(), keepDeleteTuples, mergePolicyInfo));
     }
 
     // This method creates the appropriate opContext for the targeted version
@@ -399,6 +399,7 @@ public class ExternalBTreeWithBuddy extends AbstractLSMIndex implements ITreeInd
         LSMBTreeWithBuddyDiskComponent mergedComponent = createDiskComponent(componentFactory,
                 mergeOp.getBTreeMergeTarget(), mergeOp.getBuddyBTreeMergeTarget(), mergeOp.getBloomFilterMergeTarget(),
                 true);
+        mergedComponent.setMergePolicyInfo(mergeOp.getMergePolicyInfo());
 
         // In case we must keep the deleted-keys BuddyBTrees, then they must be
         // merged *before* merging the b-trees so that

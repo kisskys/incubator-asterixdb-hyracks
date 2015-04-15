@@ -35,7 +35,7 @@ public class PrefixMergePolicy implements ILSMMergePolicy {
     private int maxToleranceComponentCount;
 
     @Override
-    public void diskComponentAdded(final ILSMIndex index, boolean fullMergeIsRequested) throws HyracksDataException,
+    public void diskComponentAdded(final ILSMIndex index, boolean fullMergeIsRequested, AbstractDiskLSMComponent newComponent) throws HyracksDataException,
             IndexException {
         // 1.  Look at the candidate components for merging in oldest-first order.  If one exists, identify the prefix of the sequence of
         // all such components for which the sum of their sizes exceeds MaxMrgCompSz.  Schedule a merge of those components into a new component.
@@ -78,7 +78,7 @@ public class PrefixMergePolicy implements ILSMMergePolicy {
                 Collections.reverse(mergableComponents);
                 ILSMIndexAccessor accessor = (ILSMIndexAccessor) index.createAccessor(NoOpOperationCallback.INSTANCE,
                         NoOpOperationCallback.INSTANCE);
-                accessor.scheduleMerge(index.getIOOperationCallback(), mergableComponents);
+                accessor.scheduleMerge(index.getIOOperationCallback(), mergableComponents, null);
                 break;
             }
         }

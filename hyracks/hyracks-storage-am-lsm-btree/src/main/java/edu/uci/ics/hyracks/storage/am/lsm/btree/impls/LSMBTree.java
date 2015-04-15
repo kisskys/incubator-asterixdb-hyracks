@@ -503,7 +503,7 @@ public class LSMBTree extends AbstractLSMIndex implements ITreeIndex {
     }
 
     @Override
-    public void scheduleMerge(ILSMIndexOperationContext ctx, ILSMIOOperationCallback callback)
+    public void scheduleMerge(ILSMIndexOperationContext ctx, ILSMIOOperationCallback callback, Object mergePolicyInfo)
             throws HyracksDataException, IndexException {
         LSMBTreeOpContext opCtx = createOpContext(NoOpOperationCallback.INSTANCE, NoOpOperationCallback.INSTANCE);
         opCtx.setOperation(IndexOperation.MERGE);
@@ -524,7 +524,7 @@ public class LSMBTree extends AbstractLSMIndex implements ITreeIndex {
         ILSMIndexAccessorInternal accessor = new LSMBTreeAccessor(lsmHarness, opCtx);
         ioScheduler.scheduleOperation(new LSMBTreeMergeOperation(accessor, mergingComponents, cursor, relMergeFileRefs
                 .getInsertIndexFileReference(), relMergeFileRefs.getBloomFilterFileReference(), callback, fileManager
-                .getBaseDir()));
+                .getBaseDir(), mergePolicyInfo));
     }
 
     @Override
@@ -547,6 +547,7 @@ public class LSMBTree extends AbstractLSMIndex implements ITreeIndex {
                 bloomFilterFalsePositiveRate);
         LSMBTreeDiskComponent mergedComponent = createDiskComponent(componentFactory, mergeOp.getBTreeMergeTarget(),
                 mergeOp.getBloomFilterMergeTarget(), true);
+        mergedComponent.setMergePolicyInfo(mergeOp.getMergePolicyInfo());
 
         IIndexBulkLoader bulkLoader = mergedComponent.getBTree().createBulkLoader(1.0f, false, numElements, false);
         IIndexBulkLoader builder = mergedComponent.getBloomFilter().createBuilder(numElements,

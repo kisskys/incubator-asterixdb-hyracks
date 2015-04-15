@@ -124,7 +124,7 @@ public class ExternalIndexHarness extends LSMHarness {
                         if (newComponent != null) {
                             beforeSubsumeMergedComponents(newComponent, ctx.getComponentHolder());
                             lsmIndex.subsumeMergedComponents(newComponent, ctx.getComponentHolder());
-                            mergePolicy.diskComponentAdded(lsmIndex, fullMergeIsRequested.get());
+                            mergePolicy.diskComponentAdded(lsmIndex, fullMergeIsRequested.get(), (AbstractDiskLSMComponent)newComponent);
                         }
                         break;
                     default:
@@ -174,13 +174,13 @@ public class ExternalIndexHarness extends LSMHarness {
     }
 
     @Override
-    public void scheduleMerge(ILSMIndexOperationContext ctx, ILSMIOOperationCallback callback)
+    public void scheduleMerge(ILSMIndexOperationContext ctx, ILSMIOOperationCallback callback, Object mergePolicyInfo)
             throws HyracksDataException, IndexException {
         if (!getAndEnterComponents(ctx, LSMOperationType.MERGE, true)) {
             callback.afterFinalize(LSMOperationType.MERGE, null);
             return;
         }
-        lsmIndex.scheduleMerge(ctx, callback);
+        lsmIndex.scheduleMerge(ctx, callback, mergePolicyInfo);
     }
 
     @Override
@@ -194,7 +194,7 @@ public class ExternalIndexHarness extends LSMHarness {
             return;
         }
         fullMergeIsRequested.set(false);
-        lsmIndex.scheduleMerge(ctx, callback);
+        lsmIndex.scheduleMerge(ctx, callback, null);
     }
 
     @Override
@@ -224,7 +224,7 @@ public class ExternalIndexHarness extends LSMHarness {
         lsmIndex.addComponent(c);
         // Enter the component
         enterComponent(c);
-        mergePolicy.diskComponentAdded(lsmIndex, false);
+        mergePolicy.diskComponentAdded(lsmIndex, false, (AbstractDiskLSMComponent)c);
     }
 
     // Three differences from  addBulkLoadedComponent
@@ -257,7 +257,7 @@ public class ExternalIndexHarness extends LSMHarness {
                 enterComponent(newComponent);
             }
             index.commitTransactionDiskComponent(newComponent);
-            mergePolicy.diskComponentAdded(lsmIndex, fullMergeIsRequested.get());
+            mergePolicy.diskComponentAdded(lsmIndex, fullMergeIsRequested.get(), (AbstractDiskLSMComponent)newComponent);
         }
     }
 

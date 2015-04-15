@@ -256,7 +256,7 @@ public class LSMRTreeWithAntiMatterTuples extends AbstractLSMRTree {
     }
 
     @Override
-    public void scheduleMerge(ILSMIndexOperationContext ctx, ILSMIOOperationCallback callback)
+    public void scheduleMerge(ILSMIndexOperationContext ctx, ILSMIOOperationCallback callback, Object mergePolicyInfo)
             throws HyracksDataException, IndexException {
         LSMRTreeOpContext rctx = createOpContext(NoOpOperationCallback.INSTANCE);
         rctx.setOperation(IndexOperation.MERGE);
@@ -270,7 +270,7 @@ public class LSMRTreeWithAntiMatterTuples extends AbstractLSMRTree {
         LSMComponentFileReferences relMergeFileRefs = getMergeTargetFileName(mergingComponents);
         ILSMIndexAccessorInternal accessor = new LSMRTreeWithAntiMatterTuplesAccessor(lsmHarness, rctx);
         ioScheduler.scheduleOperation(new LSMRTreeMergeOperation(accessor, mergingComponents, cursor, relMergeFileRefs
-                .getInsertIndexFileReference(), null, null, callback, fileManager.getBaseDir()));
+                .getInsertIndexFileReference(), null, null, callback, fileManager.getBaseDir(), mergePolicyInfo));
     }
 
     @Override
@@ -285,6 +285,7 @@ public class LSMRTreeWithAntiMatterTuples extends AbstractLSMRTree {
         // Bulk load the tuples from all on-disk RTrees into the new RTree.
         LSMRTreeDiskComponent component = createDiskComponent(componentFactory, mergeOp.getRTreeMergeTarget(), null,
                 null, true);
+        component.setMergePolicyInfo(mergeOp.getMergePolicyInfo());
         RTree mergedRTree = component.getRTree();
         IIndexBulkLoader bulkloader = mergedRTree.createBulkLoader(1.0f, false, 0L, false);
         try {

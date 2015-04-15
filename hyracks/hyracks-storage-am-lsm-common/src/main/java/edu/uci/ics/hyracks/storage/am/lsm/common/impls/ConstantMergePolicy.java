@@ -31,7 +31,7 @@ public class ConstantMergePolicy implements ILSMMergePolicy {
     private int numComponents;
 
     @Override
-    public void diskComponentAdded(final ILSMIndex index, boolean fullMergeIsRequested) throws HyracksDataException,
+    public void diskComponentAdded(final ILSMIndex index, boolean fullMergeIsRequested, AbstractDiskLSMComponent newComponent) throws HyracksDataException,
             IndexException {
         List<ILSMComponent> immutableComponents = index.getImmutableComponents();
         for (ILSMComponent c : immutableComponents) {
@@ -46,7 +46,7 @@ public class ConstantMergePolicy implements ILSMMergePolicy {
         } else if (immutableComponents.size() >= numComponents) {
             ILSMIndexAccessor accessor = (ILSMIndexAccessor) index.createAccessor(NoOpOperationCallback.INSTANCE,
                     NoOpOperationCallback.INSTANCE);
-            accessor.scheduleMerge(index.getIOOperationCallback(), immutableComponents);
+            accessor.scheduleMerge(index.getIOOperationCallback(), immutableComponents, null);
         }
     }
 

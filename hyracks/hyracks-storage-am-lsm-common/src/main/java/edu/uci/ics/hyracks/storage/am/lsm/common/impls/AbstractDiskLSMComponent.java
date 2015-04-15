@@ -19,6 +19,8 @@ import edu.uci.ics.hyracks.storage.am.lsm.common.api.ILSMComponentFilter;
 
 public abstract class AbstractDiskLSMComponent extends AbstractLSMComponent {
 
+    protected Object mergePolicyInfo;
+    
     public AbstractDiskLSMComponent(ILSMComponentFilter filter) {
         super(filter);
         state = ComponentState.READABLE_UNWRITABLE;
@@ -91,5 +93,13 @@ public abstract class AbstractDiskLSMComponent extends AbstractLSMComponent {
     protected abstract void destroy() throws HyracksDataException;
 
     public abstract long getComponentSize();
+    
+    public void setMergePolicyInfo(Object info) {
+        mergePolicyInfo = info;
+    }
+    
+    public Object getMergePolicyInfo() {
+        return mergePolicyInfo;
+    }
 
 }

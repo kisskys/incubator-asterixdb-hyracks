@@ -25,11 +25,11 @@ import edu.uci.ics.hyracks.api.io.IODeviceHandle;
 import edu.uci.ics.hyracks.storage.am.common.api.ITreeIndexCursor;
 import edu.uci.ics.hyracks.storage.am.common.api.IndexException;
 import edu.uci.ics.hyracks.storage.am.lsm.common.api.ILSMComponent;
-import edu.uci.ics.hyracks.storage.am.lsm.common.api.ILSMIOOperation;
 import edu.uci.ics.hyracks.storage.am.lsm.common.api.ILSMIOOperationCallback;
 import edu.uci.ics.hyracks.storage.am.lsm.common.api.ILSMIndexAccessorInternal;
+import edu.uci.ics.hyracks.storage.am.lsm.common.impls.AbstractLSMMergeOperation;
 
-public class LSMBTreeMergeOperation implements ILSMIOOperation {
+public class LSMBTreeMergeOperation extends AbstractLSMMergeOperation {
 
     private final ILSMIndexAccessorInternal accessor;
     private final List<ILSMComponent> mergingComponents;
@@ -41,7 +41,8 @@ public class LSMBTreeMergeOperation implements ILSMIOOperation {
 
     public LSMBTreeMergeOperation(ILSMIndexAccessorInternal accessor, List<ILSMComponent> mergingComponents,
             ITreeIndexCursor cursor, FileReference btreeMergeTarget, FileReference bloomFilterMergeTarget,
-            ILSMIOOperationCallback callback, String indexIdentifier) {
+            ILSMIOOperationCallback callback, String indexIdentifier, Object mergePolicyInfo) {
+        super(mergePolicyInfo);
         this.accessor = accessor;
         this.mergingComponents = mergingComponents;
         this.cursor = cursor;
