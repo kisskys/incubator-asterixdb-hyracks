@@ -18,6 +18,7 @@ package edu.uci.ics.hyracks.storage.am.rtree.impls;
 import edu.uci.ics.hyracks.api.exceptions.HyracksDataException;
 import edu.uci.ics.hyracks.api.util.ExperimentProfiler;
 import edu.uci.ics.hyracks.api.util.SpatialIndexProfiler;
+import edu.uci.ics.hyracks.api.util.StopWatch;
 import edu.uci.ics.hyracks.dataflow.common.data.accessors.ITupleReference;
 import edu.uci.ics.hyracks.storage.am.common.api.ICursorInitialState;
 import edu.uci.ics.hyracks.storage.am.common.api.ISearchPredicate;
@@ -55,11 +56,15 @@ public class RTreeSearchCursor implements ITreeIndexCursor {
     
     //for profiler
     private int profilerLeafPageFetchCount;
+    private StopWatch sw;
 
     public RTreeSearchCursor(IRTreeInteriorFrame interiorFrame, IRTreeLeafFrame leafFrame) {
         this.interiorFrame = interiorFrame;
         this.leafFrame = leafFrame;
         this.frameTuple = leafFrame.createTupleReference();
+        if (ExperimentProfiler.PROFILE_MODE) {
+            sw = new StopWatch();
+        }
     }
 
     @Override
@@ -132,6 +137,9 @@ public class RTreeSearchCursor implements ITreeIndexCursor {
                     // We do DFS so that we get the tuples ordered (for disk
                     // RTrees only) in the case we we are using total order
                     // (such as Hilbert order)
+                    if (ExperimentProfiler.PROFILE_MODE) {
+                        sw.resume();
+                    }
                     if (searchKey != null) {
                         for (int i = interiorFrame.getTupleCount() - 1; i >= 0; i--) {
                             int childPageId = interiorFrame.getChildPageIdIfIntersect(searchKey, i, cmp);
@@ -144,6 +152,9 @@ public class RTreeSearchCursor implements ITreeIndexCursor {
                             int childPageId = interiorFrame.getChildPageId(i);
                             pathList.add(childPageId, pageLsn, -1);
                         }
+                    }
+                    if (ExperimentProfiler.PROFILE_MODE) {
+                        sw.stop();
                     }
 
                 } else {
@@ -174,6 +185,8 @@ public class RTreeSearchCursor implements ITreeIndexCursor {
             if (ExperimentProfiler.PROFILE_MODE) {
                 SpatialIndexProfiler.INSTANCE.rtreeNumOfSearchPerQuery.add(""+profilerLeafPageFetchCount+"\n");
                 profilerLeafPageFetchCount = 0;
+                SpatialIndexProfiler.INSTANCE.sidxCPUCostProfiler.add(""+sw.getElapsedTime()+"\n");
+                sw.start();
             }
             return false;
         }
@@ -183,12 +196,17 @@ public class RTreeSearchCursor implements ITreeIndexCursor {
                 if (ExperimentProfiler.PROFILE_MODE) {
                     SpatialIndexProfiler.INSTANCE.rtreeNumOfSearchPerQuery.add(""+profilerLeafPageFetchCount+"\n");
                     profilerLeafPageFetchCount = 0;
+                    SpatialIndexProfiler.INSTANCE.sidxCPUCostProfiler.add(""+sw.getElapsedTime()+"\n");
+                    sw.start();
                 }
                 return false;
             }
         }
 
         do {
+            if (ExperimentProfiler.PROFILE_MODE) {
+                sw.resume();
+            }
             for (int i = tupleIndex; i < leafFrame.getTupleCount(); i++) {
                 if (searchKey != null) {
                     if (leafFrame.intersect(searchKey, i, cmp)) {
@@ -196,6 +214,9 @@ public class RTreeSearchCursor implements ITreeIndexCursor {
                         currentTupleIndex = i; // This is only needed for the
                                                // LSMRTree flush operation
                         tupleIndexInc = i + 1;
+                        if (ExperimentProfiler.PROFILE_MODE) {
+                            sw.stop();
+                        }
                         return true;
                     }
                 } else {
@@ -204,6 +225,9 @@ public class RTreeSearchCursor implements ITreeIndexCursor {
                                            // LSMRTree
                                            // flush operation
                     tupleIndexInc = i + 1;
+                    if (ExperimentProfiler.PROFILE_MODE) {
+                        sw.resume();
+                    }
                     return true;
                 }
             }
@@ -211,6 +235,8 @@ public class RTreeSearchCursor implements ITreeIndexCursor {
         if (ExperimentProfiler.PROFILE_MODE) {
             SpatialIndexProfiler.INSTANCE.rtreeNumOfSearchPerQuery.add(""+profilerLeafPageFetchCount+"\n");
             profilerLeafPageFetchCount = 0;
+            SpatialIndexProfiler.INSTANCE.sidxCPUCostProfiler.add(""+sw.getElapsedTime()+"\n");
+            sw.start();
         }
         return false;
     }

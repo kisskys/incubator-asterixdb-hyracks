@@ -858,6 +858,18 @@ public class RTree extends AbstractTreeIndex {
             throw new UnsupportedOperationException(
                     "The RTree does not support the notion of keys, therefore upsert does not make sense.");
         }
+
+        /***********
+         * This method is used to create a Cursor which gets all MBRs in a certain level 
+         * (indicated by the treeLevel parameter) in a R-tree.
+         * This method exists for debugging purpose and must not be used for any other purposes.
+         * 
+         * @param treeLevel
+         * @return
+         */
+        public RTreeInteriorCursor createInteriorCursor(int treeLevel) {
+            return new RTreeInteriorCursor((IRTreeInteriorFrame) interiorFrameFactory.createFrame(), treeLevel);
+        }
     }
 
     @Override

@@ -15,6 +15,7 @@ public class SpatialIndexProfiler {
     public ExperimentProfiler pidxInsertCount;
     public ExperimentProfiler sidxInsertCount;
     public ExperimentProfiler entityCommitLogCount;
+    public ExperimentProfiler sidxCPUCostProfiler;
 
     private SpatialIndexProfiler() {
         if (ExperimentProfiler.PROFILE_MODE) {
@@ -40,6 +41,8 @@ public class SpatialIndexProfiler {
             sidxInsertCount.begin();
             entityCommitLogCount = new ExperimentProfiler("entityCommitLogCount-" + sdf.format(Calendar.getInstance().getTime()) + ".txt", 1);
             entityCommitLogCount.begin();
+            sidxCPUCostProfiler = new ExperimentProfiler("sidxCPUCostProfiler-" + sdf.format(Calendar.getInstance().getTime()) + ".txt", 1);
+            sidxCPUCostProfiler.begin();
         }
     }
 }
