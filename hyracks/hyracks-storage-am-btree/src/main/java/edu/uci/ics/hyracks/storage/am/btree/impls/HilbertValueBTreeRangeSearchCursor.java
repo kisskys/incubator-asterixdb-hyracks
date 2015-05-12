@@ -36,7 +36,11 @@ import edu.uci.ics.hyracks.storage.common.buffercache.ICachedPage;
 public class HilbertValueBTreeRangeSearchCursor implements ITreeIndexCursor {
 
     private static final boolean DEBUG = false;
+
+    private final static int HILBERT_SPACE_ORDER = 31;
     private static final int MAX_COORDINATE = 180;
+    private static final long COORDINATE_EXTENSION_FACTOR = (long) (((double) (1L << HILBERT_SPACE_ORDER)) / (2 * MAX_COORDINATE));
+    private static final int MAX_TREE_LEVEL = HILBERT_SPACE_ORDER;
     private static final int DIMENSION = 2; //Only two dimensional data are supported.
     private final IBTreeLeafFrame frame;
     private final boolean exclusiveLatchNodes;
@@ -52,6 +56,7 @@ public class HilbertValueBTreeRangeSearchCursor implements ITreeIndexCursor {
     private ITupleReference tRefNextMatch;
     private ArrayTupleBuilder tBuilderNextMatch;
     private double searchedPoint[] = new double[DIMENSION];
+    private long searchedLongCoordinate[] = new long[DIMENSION];
 
     private boolean firstOpen;
     private IIndexAccessor btreeAccessor;
@@ -62,18 +67,15 @@ public class HilbertValueBTreeRangeSearchCursor implements ITreeIndexCursor {
     private boolean isPointQuery;
     private int pointQueryNextMatchCallCount;
 
-    private static final long COORDINATE_EXTENSION_ALPHA = 1000000L;
-    private static final int MAX_TREE_LEVEL = 29;
     private final long wholeSearchSpaceBL[] = new long[] { 0, 0 };
     private final long wholeSearchSpaceTR[] = new long[] { 1L << MAX_TREE_LEVEL, 1L << MAX_TREE_LEVEL };
     private long wholeQueryRegionBL[] = new long[DIMENSION];
     private long wholeQueryRegionTR[] = new long[DIMENSION];
-    private double originalWholeQueryRegionBL[] = new double[DIMENSION];
-    private double originalWholeQueryRegionTR[] = new double[DIMENSION];
     boolean hasBacktrack;
     boolean considerBacktrack;
     private long pageKey;
     private long prevHilbertValue;
+    private long curHilbertValue;
 
     //for profiler
     private int profileSearchCount;
@@ -111,19 +113,11 @@ public class HilbertValueBTreeRangeSearchCursor implements ITreeIndexCursor {
         linearizerSearchPredicate = (ILinearizerSearchPredicate) searchPred;
         linearizerSearchHelper = linearizerSearchPredicate.getLinearizerSearchHelper();
 
-        originalWholeQueryRegionBL[0] = linearizerSearchHelper.getQueryBottomLeftX();
-        originalWholeQueryRegionBL[1] = linearizerSearchHelper.getQueryBottomLeftY();
-        originalWholeQueryRegionTR[0] = linearizerSearchHelper.getQueryTopRightX();
-        originalWholeQueryRegionTR[1] = linearizerSearchHelper.getQueryTopRightY();
-
-        wholeQueryRegionBL[0] = (long) (linearizerSearchHelper.getQueryBottomLeftX() * COORDINATE_EXTENSION_ALPHA + MAX_COORDINATE
-                * COORDINATE_EXTENSION_ALPHA);
-        wholeQueryRegionBL[1] = (long) (linearizerSearchHelper.getQueryBottomLeftY() * COORDINATE_EXTENSION_ALPHA + MAX_COORDINATE
-                * COORDINATE_EXTENSION_ALPHA);
-        wholeQueryRegionTR[0] = (long) (linearizerSearchHelper.getQueryTopRightX() * COORDINATE_EXTENSION_ALPHA + MAX_COORDINATE
-                * COORDINATE_EXTENSION_ALPHA);
-        wholeQueryRegionTR[1] = (long) (linearizerSearchHelper.getQueryTopRightY() * COORDINATE_EXTENSION_ALPHA + MAX_COORDINATE
-                * COORDINATE_EXTENSION_ALPHA);
+        //Warning: caller must make sure that all coordinates are in geo-space. 
+        wholeQueryRegionBL[0] = getLongCoordinate(linearizerSearchHelper.getQueryBottomLeftX());
+        wholeQueryRegionBL[1] = getLongCoordinate(linearizerSearchHelper.getQueryBottomLeftY());
+        wholeQueryRegionTR[0] = getLongCoordinate(linearizerSearchHelper.getQueryTopRightX());
+        wholeQueryRegionTR[1] = getLongCoordinate(linearizerSearchHelper.getQueryTopRightY());
 
         if (firstOpen) {
             if (wholeQueryRegionBL[0] == wholeQueryRegionTR[0] && wholeQueryRegionBL[1] == wholeQueryRegionTR[1]) {
@@ -146,6 +140,10 @@ public class HilbertValueBTreeRangeSearchCursor implements ITreeIndexCursor {
         firstOpen = false;
     }
 
+    private long getLongCoordinate(double c) {
+        return ((long) ((c + (double) MAX_COORDINATE) * (double) COORDINATE_EXTENSION_FACTOR));
+    }
+
     @Override
     public void close() throws HyracksDataException {
         if (cursor != null) {
@@ -162,7 +160,7 @@ public class HilbertValueBTreeRangeSearchCursor implements ITreeIndexCursor {
         while (true) {
             if (cursor == null) {
                 if (ExperimentProfiler.PROFILE_MODE) {
-                    SpatialIndexProfiler.INSTANCE.dhbtreeNumOfSearchPerQuery.add("" + profileSearchCount + "\n");
+                    SpatialIndexProfiler.INSTANCE.dhvbtreeNumOfSearchPerQuery.add("" + profileSearchCount + "\n");
                     profileSearchCount = 0;
                 }
                 return false;
@@ -171,7 +169,7 @@ public class HilbertValueBTreeRangeSearchCursor implements ITreeIndexCursor {
                 cursor.close();
                 cursor = null;
                 if (ExperimentProfiler.PROFILE_MODE) {
-                    SpatialIndexProfiler.INSTANCE.dhbtreeNumOfSearchPerQuery.add("" + profileSearchCount + "\n");
+                    SpatialIndexProfiler.INSTANCE.dhvbtreeNumOfSearchPerQuery.add("" + profileSearchCount + "\n");
                     profileSearchCount = 0;
                 }
                 return false;
@@ -191,8 +189,9 @@ public class HilbertValueBTreeRangeSearchCursor implements ITreeIndexCursor {
                         cursor.getTuple().getFieldStart(0));
                 while (cursor.hasNext()) {
                     cursor.next();
-                    if (prevHilbertValue != linearizerSearchHelper.convertInt64Field2Long(cursor.getTuple()
-                            .getFieldData(0), cursor.getTuple().getFieldStart(0))) {
+                    curHilbertValue = linearizerSearchHelper.convertInt64Field2Long(cursor.getTuple().getFieldData(0),
+                            cursor.getTuple().getFieldStart(0));
+                    if (prevHilbertValue != curHilbertValue) {
                         break;
                     }
                 }
@@ -304,7 +303,15 @@ public class HilbertValueBTreeRangeSearchCursor implements ITreeIndexCursor {
         considerBacktrack = true;
         hasBacktrack = false;
         currentSearchCtx.init();
+
+        if (DEBUG) {
+            System.out.println("pageKey: " + pageKey + "=>" + Long.toBinaryString(pageKey));
+        }
+
         while (currentSearchCtx.treeLevel <= MAX_TREE_LEVEL) {
+            if (DEBUG) {
+                currentSearchCtx.prettyPrint();
+            }
             currentSearchCtx.computeQLower();
             currentSearchCtx.computeQUpper();
             if (considerBacktrack) {
@@ -315,6 +322,10 @@ public class HilbertValueBTreeRangeSearchCursor implements ITreeIndexCursor {
             success = binarySearchOverlappingQuadrants();
             if (!success) {
                 return null;
+            }
+
+            if (DEBUG) {
+                currentSearchCtx.prettyPrint();
             }
 
             if (currentSearchCtx.treeLevel != MAX_TREE_LEVEL) {
@@ -331,20 +342,22 @@ public class HilbertValueBTreeRangeSearchCursor implements ITreeIndexCursor {
             currentSearchCtx.updateNextMatch();
             currentSearchCtx.updateState();
             ++currentSearchCtx.treeLevel;
-            if (currentSearchCtx.treeLevel <= MAX_TREE_LEVEL && considerBacktrack
-                    && currentSearchCtx.H < currentSearchCtx.minDerivedKey) {
+            if (considerBacktrack && currentSearchCtx.H < currentSearchCtx.minDerivedKey) {
                 considerBacktrack = false;
-                if (currentSearchCtx.areQueryRegionAndSearchSpaceEqual()) {
-                    break;
-                }
             }
+
+            if (!considerBacktrack && currentSearchCtx.treeLevel <= MAX_TREE_LEVEL
+                    && currentSearchCtx.areQueryRegionAndSearchSpaceEqual()) {
+                break;
+            }
+        }
+
+        if (DEBUG) {
+            currentSearchCtx.prettyPrint();
         }
 
         //prepare cursor to return
         setNextMatch(currentSearchCtx.nextMatch);
-        if (DEBUG) {
-            System.out.println("nextMatch: " + currentSearchCtx.nextMatch);
-        }
         cursor = new BTreeRangeSearchCursor(frame, exclusiveLatchNodes);
         if (search) {
             btreeAccessor.search(this, linearizerSearchPredicate);
@@ -385,6 +398,8 @@ public class HilbertValueBTreeRangeSearchCursor implements ITreeIndexCursor {
         backtrackSearchCtx.maxDerivedKey = currentSearchCtx.maxDerivedKey;
         backtrackSearchCtx.H = currentSearchCtx.H;
         backtrackSearchCtx.nextMatch = currentSearchCtx.nextMatch;
+        backtrackSearchCtx.qLower = currentSearchCtx.qLower;
+        backtrackSearchCtx.qUpper = currentSearchCtx.qUpper;
         backtrackSearchCtx.binarySearchIterationCount = iterationCount;
         backtrackSearchCtx.cutDimension = cutDimension;
         backtrackSearchCtx.takeHigherCoordinates = takeHigherCoordinates;
@@ -511,20 +526,26 @@ public class HilbertValueBTreeRangeSearchCursor implements ITreeIndexCursor {
         //An entry of HilbertValueBTreeIndex consists of [ Hilbert value (AINT64) | point (APOINT) | PK ].
         linearizerSearchHelper.convertPointField2TwoDoubles(tuple.getFieldData(0), tuple.getFieldStart(1),
                 searchedPoint);
+        searchedLongCoordinate[0] = getLongCoordinate(searchedPoint[0]);
+        searchedLongCoordinate[1] = getLongCoordinate(searchedPoint[1]);
 
         if (DEBUG) {
-            if (originalWholeQueryRegionBL[0] <= searchedPoint[0] && originalWholeQueryRegionTR[0] >= searchedPoint[0]
-                    && originalWholeQueryRegionBL[1] <= searchedPoint[1]
-                    && originalWholeQueryRegionTR[1] >= searchedPoint[1]) {
-                System.out.println("yes: \t" + searchedPoint[0] + ", " + searchedPoint[1]);
+            if (wholeQueryRegionBL[0] <= searchedLongCoordinate[0]
+                    && wholeQueryRegionTR[0] >= searchedLongCoordinate[0]
+                    && wholeQueryRegionBL[1] <= searchedLongCoordinate[1]
+                    && wholeQueryRegionTR[1] >= searchedLongCoordinate[1]) {
+                System.out.println("yes: " + searchedPoint[0] + ", " + searchedPoint[1] + ", "
+                        + searchedLongCoordinate[0] + ", " + searchedLongCoordinate[1] + ", "
+                        + linearizerSearchHelper.convertInt64Field2Long(tuple.getFieldData(0), tuple.getFieldStart(0)));
             } else {
-                System.out.println("no : \t" + searchedPoint[0] + ", " + searchedPoint[1]);
+                System.out.println("no : " + searchedPoint[0] + ", " + searchedPoint[1] + ", "
+                        + searchedLongCoordinate[0] + ", " + searchedLongCoordinate[1] + ", "
+                        + linearizerSearchHelper.convertInt64Field2Long(tuple.getFieldData(0), tuple.getFieldStart(0)));
             }
         }
-
-        return originalWholeQueryRegionBL[0] <= searchedPoint[0] && originalWholeQueryRegionTR[0] >= searchedPoint[0]
-                && originalWholeQueryRegionBL[1] <= searchedPoint[1]
-                && originalWholeQueryRegionTR[1] >= searchedPoint[1];
+        return wholeQueryRegionBL[0] <= searchedLongCoordinate[0] && wholeQueryRegionTR[0] >= searchedLongCoordinate[0]
+                && wholeQueryRegionBL[1] <= searchedLongCoordinate[1]
+                && wholeQueryRegionTR[1] >= searchedLongCoordinate[1];
     }
 
     private class SearchSpaceContext {
@@ -552,6 +573,28 @@ public class HilbertValueBTreeRangeSearchCursor implements ITreeIndexCursor {
         public int cutDimension;
         public boolean takeHigherCoordinates;
 
+        public void prettyPrint() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("ss: " + searchSpaceBL[0] + "," + searchSpaceBL[1] + "," + searchSpaceTR[0] + ","
+                    + searchSpaceTR[1]);
+            sb.append(", ");
+            sb.append("qr: " + queryRegionBL[0] + "," + queryRegionBL[1] + "," + queryRegionTR[0] + ","
+                    + queryRegionTR[1]);
+            sb.append(", ");
+            sb.append("qL: " + qLower + ", qU: " + qUpper);
+            sb.append(", ");
+            sb.append("state: " + state);
+            sb.append(", ");
+            sb.append("minK: " + ((minDerivedKey <= 1) ? "0" : "") + Integer.toBinaryString(minDerivedKey) + ", maxK: "
+                    + ((maxDerivedKey <= 1) ? "0" : "") + Integer.toBinaryString(maxDerivedKey) + ", H: "
+                    + ((H <= 1) ? "0" : "") + Integer.toBinaryString(H));
+            sb.append(", ");
+            sb.append("match: " + nextMatch + "=>" + Long.toBinaryString(nextMatch));
+            sb.append(", ");
+            sb.append("level: " + treeLevel);
+            System.out.println(sb.toString());
+        }
+
         public void init() {
             for (int i = 0; i < DIMENSION; i++) {
                 searchSpaceBL[i] = wholeSearchSpaceBL[i];
@@ -569,8 +612,8 @@ public class HilbertValueBTreeRangeSearchCursor implements ITreeIndexCursor {
         }
 
         public boolean areQueryRegionAndSearchSpaceEqual() {
-            // TODO Auto-generated method stub
-            return false;
+            return searchSpaceBL[0] == queryRegionBL[0] && searchSpaceBL[1] == queryRegionBL[1]
+                    && searchSpaceTR[0] == queryRegionTR[0] && searchSpaceTR[1] == queryRegionTR[1];
         }
 
         public void resetDerivedKeys() {
@@ -636,12 +679,12 @@ public class HilbertValueBTreeRangeSearchCursor implements ITreeIndexCursor {
             }
         }
 
-        private void computeQLower() {
+        public void computeQLower() {
             qLower = HilbertValueBTreeRangeSearchCursorHelper.concatenateKthMSBs(queryRegionBL[0], queryRegionBL[1],
                     treeLevel, MAX_TREE_LEVEL);
         }
 
-        private void computeQUpper() {
+        public void computeQUpper() {
             /* corner case handling - deal with queryRegionTR which is on searchSpaceTR */
             long x = queryRegionTR[0] == searchSpaceTR[0] ? queryRegionTR[0] - 1 : queryRegionTR[0];
             long y = queryRegionTR[1] == searchSpaceTR[1] ? queryRegionTR[1] - 1 : queryRegionTR[1];
@@ -652,7 +695,6 @@ public class HilbertValueBTreeRangeSearchCursor implements ITreeIndexCursor {
             H = HilbertValueBTreeRangeSearchCursorHelper.get2BitsFromKthMSB(pageKey, treeLevel * 2 - 1,
                     MAX_TREE_LEVEL * 2);
         }
-
     }
 
     private class HilbertState {
