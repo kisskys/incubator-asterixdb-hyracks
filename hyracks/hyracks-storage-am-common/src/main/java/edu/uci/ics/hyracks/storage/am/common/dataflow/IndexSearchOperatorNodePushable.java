@@ -182,7 +182,13 @@ public abstract class IndexSearchOperatorNodePushable extends AbstractUnaryInput
                 tb.addFieldEndOffset();
             }
             if (!appender.append(tb.getFieldEndOffsets(), tb.getByteArray(), 0, tb.getSize())) {
+                if (ExperimentProfiler.PROFILE_MODE) {
+                    profilerSW.stop();
+                }
                 FrameUtils.flushFrame(writeBuffer, writer);
+                if (ExperimentProfiler.PROFILE_MODE) {
+                    profilerSW.resume();
+                }
                 appender.reset(writeBuffer, true);
                 if (!appender.append(tb.getFieldEndOffsets(), tb.getByteArray(), 0, tb.getSize())) {
                     throw new HyracksDataException("Record size (" + tb.getSize() + ") larger than frame size ("
@@ -194,7 +200,13 @@ public abstract class IndexSearchOperatorNodePushable extends AbstractUnaryInput
         if (!matched && retainInput && retainNull) {
             if (!appender.appendConcat(accessor, tupleIndex, nullTupleBuild.getFieldEndOffsets(),
                     nullTupleBuild.getByteArray(), 0, nullTupleBuild.getSize())) {
+                if (ExperimentProfiler.PROFILE_MODE) {
+                    profilerSW.stop();
+                }
                 FrameUtils.flushFrame(writeBuffer, writer);
+                if (ExperimentProfiler.PROFILE_MODE) {
+                    profilerSW.resume();
+                }
                 appender.reset(writeBuffer, true);
                 if (!appender.appendConcat(accessor, tupleIndex, nullTupleBuild.getFieldEndOffsets(),
                         nullTupleBuild.getByteArray(), 0, nullTupleBuild.getSize())) {

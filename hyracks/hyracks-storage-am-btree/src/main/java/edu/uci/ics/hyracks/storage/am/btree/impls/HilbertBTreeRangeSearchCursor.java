@@ -38,6 +38,7 @@ public class HilbertBTreeRangeSearchCursor implements ITreeIndexCursor {
 
     private static final boolean DEBUG = false;
     public static final double MAX_COORDINATE = 180.0d;
+    private static final double MIN_STEP_SIZE = DoublePointable.getEpsilon() * 128;
 
     private static final int DIMENSION = 2; //Only two dimensional data are supported.
     private static final int MAX_SEARCH_CANDIDATES = 2; //Max number of quadrants to be searched in a level to calculate the next match.  
@@ -64,6 +65,7 @@ public class HilbertBTreeRangeSearchCursor implements ITreeIndexCursor {
     private double searchedPoint[] = new double[DIMENSION];
     private double pageKey[] = new double[DIMENSION];
     private boolean needToCheckPageKey;
+    private boolean usePreviousSearchSpaceForNextMatch;
     private boolean firstOpen;
     private IIndexAccessor btreeAccessor;
     private double qBottomLeft[] = new double[DIMENSION];
@@ -87,6 +89,7 @@ public class HilbertBTreeRangeSearchCursor implements ITreeIndexCursor {
             new HilbertState(new int[] { 1, 1, 0, 2 }, new int[] { 2, 1, 3, 0 }),
             new HilbertState(new int[] { 2, 3, 2, 1 }, new int[] { 2, 3, 1, 0 }),
             new HilbertState(new int[] { 0, 2, 3, 3 }, new int[] { 0, 3, 1, 2 }) };
+    
 
     public HilbertBTreeRangeSearchCursor(IBTreeLeafFrame frame, boolean exclusiveLatchNodes) {
         this.frame = frame;
@@ -319,6 +322,7 @@ public class HilbertBTreeRangeSearchCursor implements ITreeIndexCursor {
     }
 
     private BTreeRangeSearchCursor calculateNextMatch(boolean search) throws HyracksDataException, IndexException {
+        usePreviousSearchSpaceForNextMatch = false;
         needToCheckPageKey = true;
         backtrackFlag = false;
         for (int i = 0; i < MAX_SEARCH_CANDIDATES; i++) {
@@ -363,58 +367,39 @@ public class HilbertBTreeRangeSearchCursor implements ITreeIndexCursor {
             nextMatch[1] = qBottomLeft[1];
             pointQueryNextMatchCallCount = 1;
         } else {
+            double[] searchSpaceBottomLeft;
+            double[] searchSpaceTopRight;
+            double[] centerPoint;
+            if (usePreviousSearchSpaceForNextMatch) {
+                searchSpaceBottomLeft = currentSearchCtx.psBottomLeft;
+                searchSpaceTopRight = currentSearchCtx.psTopRight;
+                centerPoint = currentSearchCtx.prevCenterPoint;
+            } else {
+                searchSpaceBottomLeft = currentSearchCtx.sBottomLeft;
+                searchSpaceTopRight = currentSearchCtx.sTopRight;
+                centerPoint = currentSearchCtx.centerPoint;
+            }
             switch (currentSearchCtx.state) {
                 case 0:
                 case 3:
-                    nextMatch[0] = currentSearchCtx.centerPoint[0] - currentSearchCtx.stepSize * 2;
-                    nextMatch[1] = currentSearchCtx.centerPoint[1] - currentSearchCtx.stepSize * 2;
+                    nextMatch[0] = searchSpaceBottomLeft[0];
+                    nextMatch[1] = searchSpaceBottomLeft[1];
                     break;
 
                 case 1:
                 case 2:
-                    nextMatch[0] = currentSearchCtx.centerPoint[0] + currentSearchCtx.stepSize * 2;
-                    nextMatch[1] = currentSearchCtx.centerPoint[1] + currentSearchCtx.stepSize * 2;
+                    nextMatch[0] = Math.nextAfter(searchSpaceTopRight[0], centerPoint[0]);
+                    nextMatch[1] = Math.nextAfter(searchSpaceTopRight[1], centerPoint[1]);
                     break;
 
                 default:
                     throw new IllegalStateException("Illegal HilbertBTree search state: " + currentSearchCtx.state);
-            }
-            if (!currentSearchCtx.inclusive[0]) {
-                nextMatch[0] = Math.nextAfter(nextMatch[0], currentSearchCtx.centerPoint[0]);
-            }
-            if (!currentSearchCtx.inclusive[1]) {
-                nextMatch[1] = Math.nextAfter(nextMatch[1], currentSearchCtx.centerPoint[1]);
             }
         }
         
         linearizerSearchHelper.convertTwoDoubles2PointField(nextMatch, tBuilderNextMatch);
         ((ArrayTupleReference) tRefNextMatch).reset(tBuilderNextMatch.getFieldEndOffsets(),
                 tBuilderNextMatch.getByteArray());
-        
-        //[Notice]
-        //Due to the double value's precision limitation, nextMatch could be smaller than the page key.
-        //If this situation happens, first move nextMatch towards the previous center point. 
-        //If still nextMatch is smaller than the page key, set next match to the page key.
-        //Without this ramification, this situation may cause infinite loop.
-        if (pageKey[0] != Double.MAX_VALUE) {
-            linearizerSearchHelper.convertTwoDoubles2PointField(pageKey, tBuilderPageKey);
-            ((ArrayTupleReference) tRefPageKey).reset(tBuilderPageKey.getFieldEndOffsets(),
-                    tBuilderPageKey.getByteArray());
-            if (hilbertCmp.compare(tRefNextMatch, tRefPageKey) < 0) {
-                nextMatch[0] = Math.nextAfter(nextMatch[0], currentSearchCtx.prevCenterPoint[0]);
-                nextMatch[1] = Math.nextAfter(nextMatch[1], currentSearchCtx.prevCenterPoint[1]);
-                linearizerSearchHelper.convertTwoDoubles2PointField(nextMatch, tBuilderNextMatch);
-                ((ArrayTupleReference) tRefNextMatch).reset(tBuilderNextMatch.getFieldEndOffsets(),
-                        tBuilderNextMatch.getByteArray());
-                
-                //if still next match is smaller than page key then, set next match to the page key
-                if (hilbertCmp.compare(tRefNextMatch, tRefPageKey) < 0) {
-                      linearizerSearchHelper.convertTwoDoubles2PointField(pageKey, tBuilderNextMatch);
-                      ((ArrayTupleReference) tRefNextMatch).reset(tBuilderNextMatch.getFieldEndOffsets(),
-                              tBuilderNextMatch.getByteArray());
-                }
-            }
-        }
     }
 
     private void restoreBacktrackContext() {
@@ -435,10 +420,12 @@ public class HilbertBTreeRangeSearchCursor implements ITreeIndexCursor {
         updateSearchCtx(currentSearchCtx, currentSearchCtx, nextSearchCoordinates[0]);
 
         if (DEBUG) {
-            System.out.println("" + currentSearchCtx.qBottomLeft[0] + "\t" + currentSearchCtx.qBottomLeft[1] + "\t"
-                    + currentSearchCtx.qTopRight[0] + "\t" + currentSearchCtx.qTopRight[1] + "\t"
-                    + currentSearchCtx.centerPoint[0] + "\t" + currentSearchCtx.centerPoint[1] + "\t"
-                    + currentSearchCtx.stepSize + "\t" + currentSearchCtx.state);
+            System.out.println("sSpace: " + currentSearchCtx.sBottomLeft[0] + "\t" + currentSearchCtx.sBottomLeft[1] + "\t"
+                    + currentSearchCtx.sTopRight[0] + "\t" + currentSearchCtx.sTopRight[1] + "\t" + 
+                    "qRegion: " + currentSearchCtx.qBottomLeft[0] + "\t" + currentSearchCtx.qBottomLeft[1] + "\t"
+                    + currentSearchCtx.qTopRight[0] + "\t" + currentSearchCtx.qTopRight[1] + "\tcenterPoint: "
+                    + currentSearchCtx.centerPoint[0] + "\t" + currentSearchCtx.centerPoint[1] + "\tstep: "
+                    + currentSearchCtx.stepSize + "\tstate: " + currentSearchCtx.state);
         }
     }
 
@@ -468,8 +455,15 @@ public class HilbertBTreeRangeSearchCursor implements ITreeIndexCursor {
         nextCtx.prevCenterPoint[0] = currentCtx.centerPoint[0];
         nextCtx.prevCenterPoint[1] = currentCtx.centerPoint[1];
         
+        //store previous search space
+        nextCtx.psBottomLeft[0] = currentCtx.sBottomLeft[0];
+        nextCtx.psBottomLeft[1] = currentCtx.sBottomLeft[1];
+        nextCtx.psTopRight[0] = currentCtx.sTopRight[0];
+        nextCtx.psTopRight[1] = currentCtx.sTopRight[1];
+        
         switch (nextCoordinate) {
             case 0:
+                //update query region
                 if (currentCtx.qTopRight[0] > currentCtx.centerPoint[0]) {
                     nextCtx.qTopRight[0] = currentCtx.centerPoint[0];
                     nextCtx.qBottomRight[0] = currentCtx.centerPoint[0];
@@ -478,6 +472,12 @@ public class HilbertBTreeRangeSearchCursor implements ITreeIndexCursor {
                     nextCtx.qTopRight[1] = currentCtx.centerPoint[1];
                     nextCtx.qTopLeft[1] = currentCtx.centerPoint[1];
                 }
+                
+                //update search space
+                nextCtx.sTopRight[0] = currentCtx.centerPoint[0];
+                nextCtx.sTopRight[1] = currentCtx.centerPoint[1];
+                
+                //update center point and step size
                 nextCtx.centerPoint[0] = currentCtx.centerPoint[0] - currentCtx.stepSize;
                 nextCtx.centerPoint[1] = currentCtx.centerPoint[1] - currentCtx.stepSize;
                 nextCtx.inclusive[0] = false;
@@ -485,6 +485,7 @@ public class HilbertBTreeRangeSearchCursor implements ITreeIndexCursor {
                 break;
 
             case 1:
+                //update query region
                 if (currentCtx.qTopRight[0] > currentCtx.centerPoint[0]) {
                     nextCtx.qTopRight[0] = currentCtx.centerPoint[0];
                     nextCtx.qBottomRight[0] = currentCtx.centerPoint[0];
@@ -493,12 +494,19 @@ public class HilbertBTreeRangeSearchCursor implements ITreeIndexCursor {
                     nextCtx.qBottomLeft[1] = currentCtx.centerPoint[1];
                     nextCtx.qBottomRight[1] = currentCtx.centerPoint[1];
                 }
+                
+                //update search space
+                nextCtx.sTopRight[0] = currentCtx.centerPoint[0];
+                nextCtx.sBottomLeft[1] = currentCtx.centerPoint[1];
+                
+                //update center point and step size
                 nextCtx.centerPoint[0] = currentCtx.centerPoint[0] - currentCtx.stepSize;
                 nextCtx.centerPoint[1] = currentCtx.centerPoint[1] + currentCtx.stepSize;
                 nextCtx.inclusive[0] = false;
                 break;
 
             case 2:
+                //update query region
                 if (currentCtx.qBottomLeft[0] < currentCtx.centerPoint[0]) {
                     nextCtx.qBottomLeft[0] = currentCtx.centerPoint[0];
                     nextCtx.qTopLeft[0] = currentCtx.centerPoint[0];
@@ -507,12 +515,19 @@ public class HilbertBTreeRangeSearchCursor implements ITreeIndexCursor {
                     nextCtx.qTopRight[1] = currentCtx.centerPoint[1];
                     nextCtx.qTopLeft[1] = currentCtx.centerPoint[1];
                 }
+                
+                //update search space
+                nextCtx.sBottomLeft[0] = currentCtx.centerPoint[0];
+                nextCtx.sTopRight[1] = currentCtx.centerPoint[1]; 
+                
+                //update center point and step size
                 nextCtx.centerPoint[0] = currentCtx.centerPoint[0] + currentCtx.stepSize;
                 nextCtx.centerPoint[1] = currentCtx.centerPoint[1] - currentCtx.stepSize;
                 nextCtx.inclusive[1] = false;
                 break;
 
             case 3:
+                //update query region
                 if (currentCtx.qBottomLeft[0] < currentCtx.centerPoint[0]) {
                     nextCtx.qBottomLeft[0] = currentCtx.centerPoint[0];
                     nextCtx.qTopLeft[0] = currentCtx.centerPoint[0];
@@ -521,6 +536,12 @@ public class HilbertBTreeRangeSearchCursor implements ITreeIndexCursor {
                     nextCtx.qBottomLeft[1] = currentCtx.centerPoint[1];
                     nextCtx.qBottomRight[1] = currentCtx.centerPoint[1];
                 }
+                
+                //update search space
+                nextCtx.sBottomLeft[0] = currentCtx.centerPoint[0];
+                nextCtx.sBottomLeft[1] = currentCtx.centerPoint[1];
+                
+                //update center point and step size
                 nextCtx.centerPoint[0] = currentCtx.centerPoint[0] + currentCtx.stepSize;
                 nextCtx.centerPoint[1] = currentCtx.centerPoint[1] + currentCtx.stepSize;
                 break;
@@ -615,20 +636,24 @@ public class HilbertBTreeRangeSearchCursor implements ITreeIndexCursor {
     }
     
     private boolean areCurrentQueryRegionAndCurrentSearchSpaceEqual() {
-        if (
-                currentSearchCtx.stepSize < DoublePointable.getEpsilon() * 2
-                || 
-                Math.abs((currentSearchCtx.centerPoint[0] + currentSearchCtx.stepSize) - currentSearchCtx.centerPoint[0]) < DoublePointable.getEpsilon() * 2
-                || 
-                Math.abs((currentSearchCtx.centerPoint[1] + currentSearchCtx.stepSize) - currentSearchCtx.centerPoint[1]) < DoublePointable.getEpsilon() * 2
-                ||
-                (
-                        Math.abs((currentSearchCtx.centerPoint[0] - currentSearchCtx.stepSize * 2) - currentSearchCtx.qBottomLeft[0]) <= DoublePointable.getEpsilon()
-                        && Math.abs((currentSearchCtx.centerPoint[1] - currentSearchCtx.stepSize * 2) - currentSearchCtx.qBottomLeft[1]) <= DoublePointable.getEpsilon()
-                        && Math.abs((currentSearchCtx.centerPoint[0] + currentSearchCtx.stepSize * 2) - currentSearchCtx.qTopRight[0]) <= DoublePointable.getEpsilon() 
-                        && Math.abs((currentSearchCtx.centerPoint[1] + currentSearchCtx.stepSize * 2) - currentSearchCtx.qTopRight[1]) <= DoublePointable.getEpsilon()
-                )
-        ) {
+        //stop if (sBottomLeft[0] >= sTopRight[0] ||  sBottomLeft[1] >= sTopRight[1]) 
+        //which means that due to the double value's computation error, search should be stopped at this level.
+        //Then, in the previous search space, pick the smallest possible point and use it as the nextMatch   
+        if (currentSearchCtx.sBottomLeft[0] >= currentSearchCtx.sTopRight[0] || currentSearchCtx.sBottomLeft[1] >= currentSearchCtx.sTopRight[1]) {
+            usePreviousSearchSpaceForNextMatch = true;
+            return true;
+        }
+        
+        //stop if step size <= a threshold
+        if (currentSearchCtx.stepSize <= MIN_STEP_SIZE) {
+            return true;
+        }
+        
+        //stop if searchSpace and queryRegion are within epsilon distance
+        if (Math.abs(currentSearchCtx.sBottomLeft[0] - currentSearchCtx.qBottomLeft[0]) <= DoublePointable.getEpsilon()
+            && Math.abs(currentSearchCtx.sBottomLeft[1] - currentSearchCtx.qBottomLeft[1]) <= DoublePointable.getEpsilon()
+            && Math.abs(currentSearchCtx.sTopRight[0] - currentSearchCtx.qTopRight[0]) <= DoublePointable.getEpsilon() 
+            && Math.abs(currentSearchCtx.sTopRight[1] - currentSearchCtx.qTopRight[1]) <= DoublePointable.getEpsilon()) {
             return true;
         }
         return false;
@@ -638,16 +663,14 @@ public class HilbertBTreeRangeSearchCursor implements ITreeIndexCursor {
         // check whether qBottomLeftX <= x <=qTopRightX && similar for y.
         linearizerSearchHelper.convertPointField2TwoDoubles(tuple.getFieldData(0), tuple.getFieldStart(0),
                 searchedPoint);
-
         if (DEBUG) {
             if (qBottomLeft[0] <= searchedPoint[0] && qTopRight[0] >= searchedPoint[0]
                     && qBottomLeft[1] <= searchedPoint[1] && qTopRight[1] >= searchedPoint[1]) {
-                System.out.println("yes: \t" + searchedPoint[0] + ", " + searchedPoint[1]);
+                System.out.println("y: " + searchedPoint[0] + ", " + searchedPoint[1]);
             } else {
-                System.out.println("no : \t" + searchedPoint[0] + ", " + searchedPoint[1]);
+                System.out.println("n: " + searchedPoint[0] + ", " + searchedPoint[1]);
             }
         }
-
         return qBottomLeft[0] <= searchedPoint[0] && qTopRight[0] >= searchedPoint[0]
                 && qBottomLeft[1] <= searchedPoint[1] && qTopRight[1] >= searchedPoint[1];
     }
@@ -662,6 +685,11 @@ public class HilbertBTreeRangeSearchCursor implements ITreeIndexCursor {
         public double qTopRight[] = new double[2]; //queryRegionTopRight
         public double qBottomRight[] = new double[2];//queryRegionBottomRight
         public double qTopLeft[] = new double[2]; //queryRegionTopLeft
+        
+        public double sBottomLeft[] = new double[2]; //searchSpaceBottomLeft
+        public double sTopRight[] = new double[2]; //searchSpaceTopRight
+        public double psBottomLeft[] = new double[2]; //previousSearchSpaceBottomLeft
+        public double psTopRight[] = new double[2]; //previousSearchSpaceTopRight
 
         public double pageKey[] = new double[2];
         public double centerPoint[] = new double[2];
@@ -673,6 +701,14 @@ public class HilbertBTreeRangeSearchCursor implements ITreeIndexCursor {
         public void init() {
             //setPageKey(-Double.MAX_VALUE, -Double.MAX_VALUE);
             setPageKey(-MAX_COORDINATE, -MAX_COORDINATE);
+            sBottomLeft[0] = -MAX_COORDINATE;
+            sBottomLeft[1] = -MAX_COORDINATE;
+            sTopRight[0] = MAX_COORDINATE;
+            sTopRight[1] = MAX_COORDINATE;
+            psBottomLeft[0] = -MAX_COORDINATE;
+            psBottomLeft[1] = -MAX_COORDINATE;
+            psTopRight[0] = MAX_COORDINATE;
+            psTopRight[1] = MAX_COORDINATE;
             centerPoint[0] = 0.0;
             centerPoint[1] = 0.0;
             prevCenterPoint[0] = 0.0;

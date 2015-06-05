@@ -187,6 +187,15 @@ public class HilbertDoubleComparator implements ILinearizeComparator {
 
         return compare();
     }
+    
+    //for debugging purpose
+    public int compare(double[] j, double[] k) {
+        for (int i = 0; i < 2; i++) {
+            a[i] = j[i];
+            b[i] = k[i];
+        }
+        return compare();
+    }
 
     @Override
     public int getDimensions() {

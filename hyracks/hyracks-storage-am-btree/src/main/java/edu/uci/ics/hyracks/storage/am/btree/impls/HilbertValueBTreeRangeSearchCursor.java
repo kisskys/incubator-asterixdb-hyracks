@@ -187,6 +187,7 @@ public class HilbertValueBTreeRangeSearchCursor implements ITreeIndexCursor {
                 //earlier without searching through all overlapped segments of the region correctly.
                 prevHilbertValue = linearizerSearchHelper.convertInt64Field2Long(cursor.getTuple().getFieldData(0),
                         cursor.getTuple().getFieldStart(0));
+
                 while (cursor.hasNext()) {
                     cursor.next();
                     curHilbertValue = linearizerSearchHelper.convertInt64Field2Long(cursor.getTuple().getFieldData(0),
@@ -534,11 +535,11 @@ public class HilbertValueBTreeRangeSearchCursor implements ITreeIndexCursor {
                     && wholeQueryRegionTR[0] >= searchedLongCoordinate[0]
                     && wholeQueryRegionBL[1] <= searchedLongCoordinate[1]
                     && wholeQueryRegionTR[1] >= searchedLongCoordinate[1]) {
-                System.out.println("yes: " + searchedPoint[0] + ", " + searchedPoint[1] + ", "
+                System.out.println("y: " + searchedPoint[0] + ", " + searchedPoint[1] + ", "
                         + searchedLongCoordinate[0] + ", " + searchedLongCoordinate[1] + ", "
                         + linearizerSearchHelper.convertInt64Field2Long(tuple.getFieldData(0), tuple.getFieldStart(0)));
             } else {
-                System.out.println("no : " + searchedPoint[0] + ", " + searchedPoint[1] + ", "
+                System.out.println("n: " + searchedPoint[0] + ", " + searchedPoint[1] + ", "
                         + searchedLongCoordinate[0] + ", " + searchedLongCoordinate[1] + ", "
                         + linearizerSearchHelper.convertInt64Field2Long(tuple.getFieldData(0), tuple.getFieldStart(0)));
             }
