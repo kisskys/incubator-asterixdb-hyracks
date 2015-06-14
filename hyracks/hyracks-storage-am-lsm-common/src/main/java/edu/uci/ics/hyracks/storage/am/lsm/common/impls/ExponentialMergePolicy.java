@@ -39,7 +39,7 @@ public class ExponentialMergePolicy implements ILSMMergePolicy {
 
     @Override
     public synchronized void diskComponentAdded(final ILSMIndex index, boolean fullMergeIsRequested,
-            AbstractDiskLSMComponent newComponent) throws HyracksDataException, IndexException {
+            AbstractDiskLSMComponent newComponent, boolean isMergeOp) throws HyracksDataException, IndexException {
 
         if (fullMergeIsRequested) {
             throw new UnsupportedOperationException("Full merge is not supported by ExponentialMergePolicy.");

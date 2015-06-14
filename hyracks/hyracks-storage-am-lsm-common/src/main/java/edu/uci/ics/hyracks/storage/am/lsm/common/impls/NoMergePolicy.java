@@ -24,7 +24,7 @@ import edu.uci.ics.hyracks.storage.am.lsm.common.api.ILSMMergePolicy;
 public class NoMergePolicy implements ILSMMergePolicy {
 
     @Override
-    public void diskComponentAdded(final ILSMIndex index, boolean fullMergeIsRequested, AbstractDiskLSMComponent newComponent) throws HyracksDataException,
+    public void diskComponentAdded(final ILSMIndex index, boolean fullMergeIsRequested, AbstractDiskLSMComponent newComponent, boolean isMergeOp) throws HyracksDataException,
             IndexException {
         // Do nothing
     }

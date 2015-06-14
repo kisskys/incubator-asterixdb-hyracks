@@ -5,7 +5,7 @@ import java.io.IOException;
 
 public class ExperimentProfiler {
 
-    public static final boolean PROFILE_MODE = true; 
+    public static final boolean PROFILE_MODE = false; 
     private FileOutputStream fos;
     private String filePath;
     private StringBuilder sb;
