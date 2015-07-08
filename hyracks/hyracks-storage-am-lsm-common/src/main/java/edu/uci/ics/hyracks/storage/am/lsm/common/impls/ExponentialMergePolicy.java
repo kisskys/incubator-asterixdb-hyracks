@@ -39,7 +39,7 @@ public class ExponentialMergePolicy implements ILSMMergePolicy {
 
     @Override
     public synchronized void diskComponentAdded(final ILSMIndex index, boolean fullMergeIsRequested,
-            AbstractDiskLSMComponent newComponent, boolean isMergeOp) throws HyracksDataException, IndexException {
+            AbstractDiskLSMComponent newComponent) throws HyracksDataException, IndexException {
 
         if (fullMergeIsRequested) {
             throw new UnsupportedOperationException("Full merge is not supported by ExponentialMergePolicy.");
@@ -131,5 +131,11 @@ public class ExponentialMergePolicy implements ILSMMergePolicy {
         for (int i = 0; i < maxMergableComponentLevelCount; i++) {
             allMergableLevelComponents.add(new LinkedList<AbstractDiskLSMComponent>());
         }
+    }
+
+    @Override
+    public boolean isMergeLagging(ILSMIndex index) {
+        //TODO implement properly according to the merge policy
+        return false;
     }
 }

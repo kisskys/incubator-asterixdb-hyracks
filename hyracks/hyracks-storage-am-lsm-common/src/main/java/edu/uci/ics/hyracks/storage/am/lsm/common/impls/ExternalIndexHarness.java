@@ -124,7 +124,7 @@ public class ExternalIndexHarness extends LSMHarness {
                         if (newComponent != null) {
                             beforeSubsumeMergedComponents(newComponent, ctx.getComponentHolder());
                             lsmIndex.subsumeMergedComponents(newComponent, ctx.getComponentHolder());
-                            mergePolicy.diskComponentAdded(lsmIndex, fullMergeIsRequested.get(), (AbstractDiskLSMComponent)newComponent, true);
+                            mergePolicy.diskComponentAdded(lsmIndex, fullMergeIsRequested.get(), (AbstractDiskLSMComponent)newComponent);
                         }
                         break;
                     default:
@@ -224,7 +224,7 @@ public class ExternalIndexHarness extends LSMHarness {
         lsmIndex.addComponent(c);
         // Enter the component
         enterComponent(c);
-        mergePolicy.diskComponentAdded(lsmIndex, false, (AbstractDiskLSMComponent)c, false);
+        mergePolicy.diskComponentAdded(lsmIndex, false, (AbstractDiskLSMComponent)c);
     }
 
     // Three differences from  addBulkLoadedComponent
@@ -257,7 +257,7 @@ public class ExternalIndexHarness extends LSMHarness {
                 enterComponent(newComponent);
             }
             index.commitTransactionDiskComponent(newComponent);
-            mergePolicy.diskComponentAdded(lsmIndex, fullMergeIsRequested.get(), (AbstractDiskLSMComponent)newComponent, false);
+            mergePolicy.diskComponentAdded(lsmIndex, fullMergeIsRequested.get(), (AbstractDiskLSMComponent)newComponent);
         }
     }
 
