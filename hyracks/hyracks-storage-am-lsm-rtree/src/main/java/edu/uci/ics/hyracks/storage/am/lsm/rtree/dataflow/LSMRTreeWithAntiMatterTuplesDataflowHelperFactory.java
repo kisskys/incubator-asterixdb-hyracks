@@ -42,6 +42,7 @@ public class LSMRTreeWithAntiMatterTuplesDataflowHelperFactory extends AbstractL
     private final ILinearizeComparatorFactory linearizeCmpFactory;
     private final int[] rtreeFields;
     private final boolean isPointMBR;
+    public static final boolean USE_LSMRTREE_WITH_ANTIMATTER_TUPLE = true;
 
     public LSMRTreeWithAntiMatterTuplesDataflowHelperFactory(IPrimitiveValueProviderFactory[] valueProviderFactories,
             RTreePolicyType rtreePolicyType, IBinaryComparatorFactory[] btreeComparatorFactories,
