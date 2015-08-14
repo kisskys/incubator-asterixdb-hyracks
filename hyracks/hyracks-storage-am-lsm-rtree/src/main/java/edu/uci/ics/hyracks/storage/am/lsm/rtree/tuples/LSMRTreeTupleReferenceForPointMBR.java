@@ -1,13 +1,13 @@
-package edu.uci.ics.hyracks.storage.am.rtree.tuples;
+package edu.uci.ics.hyracks.storage.am.lsm.rtree.tuples;
 
 import java.nio.ByteBuffer;
 
 import edu.uci.ics.hyracks.api.dataflow.value.ITypeTraits;
 import edu.uci.ics.hyracks.storage.am.common.api.ITreeIndexFrame;
-import edu.uci.ics.hyracks.storage.am.common.api.ITreeIndexTupleReference;
 import edu.uci.ics.hyracks.storage.am.common.tuples.VarLenIntEncoderDecoder;
+import edu.uci.ics.hyracks.storage.am.lsm.common.api.ILSMTreeTupleReference;
 
-public class RTreeTypeAwareTupleReferenceForPointMBR implements ITreeIndexTupleReference {
+public class LSMRTreeTupleReferenceForPointMBR implements ILSMTreeTupleReference {
     private final int inputKeyFieldCount; //double field count for mbr secondary key of an input tuple
     private final int inputTotalFieldCount; //total field count (key + value fields) of an input tuple.
     private final int storedKeyFieldCount; //double field count to be stored for the mbr secondary key
@@ -21,8 +21,10 @@ public class RTreeTypeAwareTupleReferenceForPointMBR implements ITreeIndexTupleR
     private ByteBuffer buf;
     private int tupleStartOff;
     private int dataStartOff;
+    private final boolean antimatterAware;
 
-    public RTreeTypeAwareTupleReferenceForPointMBR(ITypeTraits[] typeTraits, int keyFieldCount, int valueFieldCount) {
+    public LSMRTreeTupleReferenceForPointMBR(ITypeTraits[] typeTraits, int keyFieldCount, int valueFieldCount,
+            boolean antimatterAware) {
         this.inputKeyFieldCount = keyFieldCount;
         this.inputTotalFieldCount = keyFieldCount + valueFieldCount;
         this.storedKeyFieldCount = keyFieldCount / 2;
@@ -32,6 +34,7 @@ public class RTreeTypeAwareTupleReferenceForPointMBR implements ITreeIndexTupleR
         this.nullFlagsBytes = getNullFlagsBytes();
         decodedFieldSlots = new int[inputTotalFieldCount];
         encDec = new VarLenIntEncoderDecoder();
+        this.antimatterAware = antimatterAware;
     }
 
     @Override
@@ -122,11 +125,21 @@ public class RTreeTypeAwareTupleReferenceForPointMBR implements ITreeIndexTupleR
     }
 
     private int getNullFlagsBytes() {
-        return (int) Math.ceil(inputTotalFieldCount / 8.0);
+        return (int) Math.ceil((inputTotalFieldCount + (antimatterAware ? 1 : 0)) / 8.0);
     }
 
     @Override
     public int getTupleSize() {
         return dataStartOff - tupleStartOff + decodedFieldSlots[inputTotalFieldCount - 1];
+    }
+
+    @Override
+    public boolean isAntimatter() {
+        // Check if the leftmost bit is 0 or 1.
+        final byte mask = (byte) (1 << 7);
+        if ((buf.array()[tupleStartOff] & mask) != 0) {
+            return true;
+        }
+        return false;
     }
 }

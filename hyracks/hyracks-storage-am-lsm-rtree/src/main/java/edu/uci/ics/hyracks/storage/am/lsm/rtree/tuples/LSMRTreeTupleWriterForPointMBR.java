@@ -13,11 +13,13 @@
  * limitations under the License.
  */
 
-package edu.uci.ics.hyracks.storage.am.rtree.tuples;
+package edu.uci.ics.hyracks.storage.am.lsm.rtree.tuples;
 
 import edu.uci.ics.hyracks.api.dataflow.value.ITypeTraits;
 import edu.uci.ics.hyracks.dataflow.common.data.accessors.ITupleReference;
 import edu.uci.ics.hyracks.storage.am.common.api.ITreeIndexTupleReference;
+import edu.uci.ics.hyracks.storage.am.lsm.common.api.ILSMTreeTupleReference;
+import edu.uci.ics.hyracks.storage.am.rtree.tuples.RTreeTypeAwareTupleWriter;
 
 /**
  * This class writes a point mbr as many double values as the number of dimension of the point.
@@ -29,26 +31,29 @@ import edu.uci.ics.hyracks.storage.am.common.api.ITreeIndexTupleReference;
  * the tuple is stored as
  * [0.4, 0.3, 1]
  * where, inputKeyFieldCount, storedKeyFieldCount, valueFieldCount member variables are set to 4, 2, and 1, respectively.
- * Similarly, the associated class RTreeTypeAwareTupleRefereceForPoiintMBR instance reads
+ * Similarly, the associated class RTreeTypeAwareTupleRefereceForPointMBR instance reads
  * the stored point MBR [0.4, 0.3, 1] and generates a tuple reference which is externally shown as [0.4, 0.3, 0.4, 0.3, 1].
  * 
  * @author kisskys
  */
 
-public class RTreeTypeAwareTupleWriterForPointMBR extends RTreeTypeAwareTupleWriter {
+public class LSMRTreeTupleWriterForPointMBR extends RTreeTypeAwareTupleWriter {
     private final int inputKeyFieldCount; //double field count for mbr secondary key of an input tuple
     private final int valueFieldCount; //value(or payload or primary key) field count (same for an input tuple and a stored tuple)
     private final int inputTotalFieldCount; //total field count (key + value fields) of an input tuple.
     private final int storedKeyFieldCount; //double field count to be stored for the mbr secondary key
     private final int storedTotalFieldCount; //total field count (key + value fields) of a stored tuple.
+    private final boolean antimatterAware;
 
-    public RTreeTypeAwareTupleWriterForPointMBR(ITypeTraits[] typeTraits, int keyFieldCount, int valueFieldCount) {
+    public LSMRTreeTupleWriterForPointMBR(ITypeTraits[] typeTraits, int keyFieldCount, int valueFieldCount,
+            boolean antimatterAware) {
         super(typeTraits);
         this.inputKeyFieldCount = keyFieldCount;
         this.valueFieldCount = valueFieldCount;
         this.inputTotalFieldCount = keyFieldCount + valueFieldCount;
         this.storedKeyFieldCount = keyFieldCount / 2;
         this.storedTotalFieldCount = storedKeyFieldCount + valueFieldCount;
+        this.antimatterAware = antimatterAware;
     }
 
     @Override
@@ -67,7 +72,7 @@ public class RTreeTypeAwareTupleWriterForPointMBR extends RTreeTypeAwareTupleWri
 
     @Override
     public ITreeIndexTupleReference createTupleReference() {
-        return new RTreeTypeAwareTupleReferenceForPointMBR(typeTraits, inputKeyFieldCount, valueFieldCount);
+        return new LSMRTreeTupleReferenceForPointMBR(typeTraits, inputKeyFieldCount, valueFieldCount, antimatterAware);
     }
 
     @Override
@@ -99,6 +104,13 @@ public class RTreeTypeAwareTupleWriterForPointMBR extends RTreeTypeAwareTupleWri
             runner += tuple.getFieldLength(i);
         }
 
+        //set antimatter bit if necessary
+        if (antimatterAware) {
+            if (tuple instanceof ILSMTreeTupleReference && ((ILSMTreeTupleReference) tuple).isAntimatter()) {
+                setAntimatterBit(targetBuf, targetOff);
+            }
+        }
+
         return runner - targetOff;
     }
 
@@ -111,7 +123,7 @@ public class RTreeTypeAwareTupleWriterForPointMBR extends RTreeTypeAwareTupleWri
     }
 
     protected int getNullFlagsBytes(ITupleReference tuple) {
-        return (int) Math.ceil((double) (storedTotalFieldCount) / 8.0);
+        return (int) Math.ceil((double) (storedTotalFieldCount + (antimatterAware ? 1 : 0)) / 8.0);
     }
 
     protected int getFieldSlotsBytes(ITupleReference tuple) {
@@ -127,5 +139,10 @@ public class RTreeTypeAwareTupleWriterForPointMBR extends RTreeTypeAwareTupleWri
     @Override
     public int getCopySpaceRequired(ITupleReference tuple) {
         return bytesRequired(tuple);
+    }
+
+    protected void setAntimatterBit(byte[] targetBuf, int targetOff) {
+        // Set leftmost bit to 1.
+        targetBuf[targetOff] = (byte) (targetBuf[targetOff] | (1 << 7));
     }
 }

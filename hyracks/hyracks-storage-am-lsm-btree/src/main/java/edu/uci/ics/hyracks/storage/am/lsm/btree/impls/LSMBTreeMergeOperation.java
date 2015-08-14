@@ -58,7 +58,9 @@ public class LSMBTreeMergeOperation extends AbstractLSMMergeOperation {
         for (ILSMComponent o : mergingComponents) {
             LSMBTreeDiskComponent component = (LSMBTreeDiskComponent) o;
             devs.add(component.getBTree().getFileReference().getDeviceHandle());
-            devs.add(component.getBloomFilter().getFileReference().getDeviceHandle());
+            if (bloomFilterMergeTarget != null) {
+                devs.add(component.getBloomFilter().getFileReference().getDeviceHandle());
+            }
         }
         return devs;
     }
@@ -67,7 +69,9 @@ public class LSMBTreeMergeOperation extends AbstractLSMMergeOperation {
     public Set<IODeviceHandle> getWriteDevices() {
         Set<IODeviceHandle> devs = new HashSet<IODeviceHandle>();
         devs.add(btreeMergeTarget.getDeviceHandle());
-        devs.add(bloomFilterMergeTarget.getDeviceHandle());
+        if (bloomFilterMergeTarget != null) {
+            devs.add(bloomFilterMergeTarget.getDeviceHandle());
+        }
         return devs;
     }
 

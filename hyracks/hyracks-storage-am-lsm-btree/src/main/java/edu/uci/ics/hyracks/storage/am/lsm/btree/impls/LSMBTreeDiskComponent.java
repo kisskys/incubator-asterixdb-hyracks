@@ -34,8 +34,10 @@ public class LSMBTreeDiskComponent extends AbstractDiskLSMComponent {
     public void destroy() throws HyracksDataException {
         btree.deactivate();
         btree.destroy();
-        bloomFilter.deactivate();
-        bloomFilter.destroy();
+        if (bloomFilter != null) {
+            bloomFilter.deactivate();
+            bloomFilter.destroy();
+        }
     }
 
     public BTree getBTree() {
@@ -48,6 +50,6 @@ public class LSMBTreeDiskComponent extends AbstractDiskLSMComponent {
 
     @Override
     public long getComponentSize() {
-        return btree.getFileReference().getFile().length() + bloomFilter.getFileReference().getFile().length();
+        return btree.getFileReference().getFile().length() + (bloomFilter == null ? 0 : bloomFilter.getFileReference().getFile().length());
     }
 }
