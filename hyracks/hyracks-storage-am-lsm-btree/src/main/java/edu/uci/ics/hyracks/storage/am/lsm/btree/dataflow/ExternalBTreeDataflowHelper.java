@@ -32,15 +32,15 @@ import edu.uci.ics.hyracks.storage.am.lsm.common.api.IVirtualBufferCache;
 
 public class ExternalBTreeDataflowHelper extends LSMBTreeDataflowHelper {
 
-    private int version;
+    private final int version;
 
     public ExternalBTreeDataflowHelper(IIndexOperatorDescriptor opDesc, IHyracksTaskContext ctx, int partition,
             double bloomFilterFalsePositiveRate, ILSMMergePolicy mergePolicy,
             ILSMOperationTrackerProvider opTrackerFactory, ILSMIOOperationScheduler ioScheduler,
             ILSMIOOperationCallbackFactory ioOpCallbackFactory, boolean needKeyDupCheck, int version,
-            IBinaryTokenizerFactory tokenizerFactory) {
+            IBinaryTokenizerFactory tokenizerFactory, boolean durable) {
         super(opDesc, ctx, partition, null, bloomFilterFalsePositiveRate, mergePolicy, opTrackerFactory, ioScheduler,
-                ioOpCallbackFactory, false, null, null, null, null);
+                ioOpCallbackFactory, false, null, null, null, null, durable);
         this.version = version;
     }
 
@@ -48,9 +48,9 @@ public class ExternalBTreeDataflowHelper extends LSMBTreeDataflowHelper {
             List<IVirtualBufferCache> virtualBufferCaches, ILSMMergePolicy mergePolicy,
             ILSMOperationTrackerProvider opTrackerFactory, ILSMIOOperationScheduler ioScheduler,
             ILSMIOOperationCallbackFactory ioOpCallbackFactory, boolean needKeyDupCheck, int version,
-            IBinaryTokenizerFactory tokenizerFactory) {
+            IBinaryTokenizerFactory tokenizerFactory, boolean durable) {
         this(opDesc, ctx, partition, DEFAULT_BLOOM_FILTER_FALSE_POSITIVE_RATE, mergePolicy, opTrackerFactory,
-                ioScheduler, ioOpCallbackFactory, needKeyDupCheck, version, tokenizerFactory);
+                ioScheduler, ioOpCallbackFactory, needKeyDupCheck, version, tokenizerFactory, durable);
     }
 
     @Override
@@ -80,7 +80,7 @@ public class ExternalBTreeDataflowHelper extends LSMBTreeDataflowHelper {
                 .getStorageManager().getFileMapProvider(ctx), treeOpDesc.getTreeIndexTypeTraits(), treeOpDesc
                 .getTreeIndexComparatorFactories(), treeOpDesc.getTreeIndexBloomFilterKeyFields(),
                 bloomFilterFalsePositiveRate, mergePolicy, opTrackerFactory.getOperationTracker(ctx), ioScheduler,
-                ioOpCallbackFactory.createIOOperationCallback(), getVersion());
+                ioOpCallbackFactory.createIOOperationCallback(), getVersion(), durable);
     }
 
     public int getVersion() {

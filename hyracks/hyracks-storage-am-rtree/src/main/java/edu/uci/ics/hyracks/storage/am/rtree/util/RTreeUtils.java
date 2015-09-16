@@ -41,7 +41,7 @@ public class RTreeUtils {
     public static RTree createRTree(IBufferCache bufferCache, IFileMapProvider fileMapProvider,
             ITypeTraits[] typeTraits, IPrimitiveValueProviderFactory[] valueProviderFactories,
             IBinaryComparatorFactory[] cmpFactories, RTreePolicyType rtreePolicyType, FileReference file,
-            boolean isPointMBR) {
+			boolean durable, boolean isPointMBR) {
 
         RTreeTypeAwareTupleWriterFactory tupleWriterFactory = new RTreeTypeAwareTupleWriterFactory(typeTraits);
         ITreeIndexFrameFactory interiorFrameFactory = new RTreeNSMInteriorFrameFactory(tupleWriterFactory,

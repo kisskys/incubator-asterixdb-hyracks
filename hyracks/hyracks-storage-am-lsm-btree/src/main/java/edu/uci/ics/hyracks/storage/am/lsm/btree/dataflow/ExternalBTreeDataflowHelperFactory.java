@@ -36,9 +36,9 @@ public class ExternalBTreeDataflowHelperFactory extends AbstractLSMIndexDataflow
     public ExternalBTreeDataflowHelperFactory(ILSMMergePolicyFactory mergePolicyFactory,
             Map<String, String> mergePolicyProperties, ILSMOperationTrackerProvider opTrackerFactory,
             ILSMIOOperationSchedulerProvider ioSchedulerProvider, ILSMIOOperationCallbackFactory ioOpCallbackFactory,
-            double bloomFilterFalsePositiveRate, int version, IBinaryTokenizerFactory tokenizerFactory) {
+            double bloomFilterFalsePositiveRate, int version, IBinaryTokenizerFactory tokenizerFactory, boolean durable) {
         super(null, mergePolicyFactory, mergePolicyProperties, opTrackerFactory, ioSchedulerProvider,
-                ioOpCallbackFactory, bloomFilterFalsePositiveRate, null, null, null);
+                ioOpCallbackFactory, bloomFilterFalsePositiveRate, null, null, null, durable);
         this.version = version;
         this.tokenizerFactory = tokenizerFactory;
         
@@ -49,7 +49,7 @@ public class ExternalBTreeDataflowHelperFactory extends AbstractLSMIndexDataflow
             int partition) {
         return new ExternalBTreeDataflowHelper(opDesc, ctx, partition, bloomFilterFalsePositiveRate,
                 mergePolicyFactory.createMergePolicy(mergePolicyProperties, ctx), opTrackerFactory,
-                ioSchedulerProvider.getIOScheduler(ctx), ioOpCallbackFactory, false, version, tokenizerFactory);
+                ioSchedulerProvider.getIOScheduler(ctx), ioOpCallbackFactory, false, version, tokenizerFactory, durable);
     }
 
 }

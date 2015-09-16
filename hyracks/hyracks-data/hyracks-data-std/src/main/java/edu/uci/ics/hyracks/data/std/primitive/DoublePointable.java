@@ -152,7 +152,7 @@ public final class DoublePointable extends AbstractPointable implements IHashabl
         return getDouble();
     }
 
-	public static double getEpsilon() {
-		return machineEpsilon;
-	}
+    public static double getEpsilon() {
+        return machineEpsilon;
+    }
 }

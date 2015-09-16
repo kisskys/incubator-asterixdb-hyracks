@@ -65,7 +65,7 @@ public class BTreeUtils {
     public static MultiComparator getSearchMultiComparator(IBinaryComparatorFactory[] cmpFactories,
             ITupleReference searchKey) {
         if (searchKey == null || cmpFactories.length == searchKey.getFieldCount()) {
-            return MultiComparator.createIgnoreFieldLength(cmpFactories);
+            return MultiComparator.create(cmpFactories);
         }
         IBinaryComparator[] newCmps = new IBinaryComparator[searchKey.getFieldCount()];
         for (int i = 0; i < searchKey.getFieldCount(); i++) {

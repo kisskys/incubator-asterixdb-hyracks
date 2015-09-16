@@ -36,9 +36,9 @@ import edu.uci.ics.hyracks.storage.am.rtree.frames.RTreePolicyType;
 
 public class LSMRTreeWithAntiMatterTuplesMultiThreadTest extends AbstractRTreeMultiThreadTest {
 
-    private LSMRTreeTestHarness harness = new LSMRTreeTestHarness();
+    private final LSMRTreeTestHarness harness = new LSMRTreeTestHarness();
 
-    private LSMRTreeWithAntiMatterTuplesTestWorkerFactory workerFactory = new LSMRTreeWithAntiMatterTuplesTestWorkerFactory();
+    private final LSMRTreeWithAntiMatterTuplesTestWorkerFactory workerFactory = new LSMRTreeWithAntiMatterTuplesTestWorkerFactory();
 
     public LSMRTreeWithAntiMatterTuplesMultiThreadTest() {
         super(false, RTreeType.LSMRTREE_WITH_ANTIMATTER);
@@ -63,7 +63,8 @@ public class LSMRTreeWithAntiMatterTuplesMultiThreadTest extends AbstractRTreeMu
                 rtreeCmpFactories, btreeCmpFactories, valueProviderFactories, rtreePolicyType,
                 harness.getMergePolicy(), harness.getOperationTracker(), harness.getIOScheduler(),
                 harness.getIOOperationCallback(),
-                LSMRTreeUtils.proposeBestLinearizer(typeTraits, rtreeCmpFactories.length), null, null, null, null, false);
+                LSMRTreeUtils.proposeBestLinearizer(typeTraits, rtreeCmpFactories.length), null, null, null, null, 
+                true, false);
 
     }
 

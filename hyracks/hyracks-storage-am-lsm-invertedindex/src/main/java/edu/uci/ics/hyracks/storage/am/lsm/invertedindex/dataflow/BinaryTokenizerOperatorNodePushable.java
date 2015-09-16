@@ -18,6 +18,7 @@ package edu.uci.ics.hyracks.storage.am.lsm.invertedindex.dataflow;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import edu.uci.ics.hyracks.api.comm.VSizeFrame;
 import edu.uci.ics.hyracks.api.context.IHyracksTaskContext;
 import edu.uci.ics.hyracks.api.dataflow.value.RecordDescriptor;
 import edu.uci.ics.hyracks.api.exceptions.HyracksDataException;
@@ -40,15 +41,13 @@ public class BinaryTokenizerOperatorNodePushable extends AbstractUnaryInputUnary
     private final boolean writeKeyFieldsFirst;
     private final RecordDescriptor inputRecDesc;
     private final RecordDescriptor outputRecDesc;
-    private final int numTokensPerOutputRecord;
+    private final short numTokensPerOutputRecord;
     private final boolean flushFramesRapidly;
 
     private FrameTupleAccessor accessor;
     private ArrayTupleBuilder builder;
     private GrowableArray builderData;
     private FrameTupleAppender appender;
-    private ByteBuffer writeBuffer;
-
 
     public BinaryTokenizerOperatorNodePushable(IHyracksTaskContext ctx, RecordDescriptor inputRecDesc,
             RecordDescriptor outputRecDesc, IBinaryTokenizer tokenizer, int docField, int[] keyFields,
@@ -61,18 +60,16 @@ public class BinaryTokenizerOperatorNodePushable extends AbstractUnaryInputUnary
         this.inputRecDesc = inputRecDesc;
         this.outputRecDesc = outputRecDesc;
         this.writeKeyFieldsFirst = writeKeyFieldsFirst;
-        this.numTokensPerOutputRecord = numTokensPerOutputRecord;
+        this.numTokensPerOutputRecord = (short) numTokensPerOutputRecord;
         this.flushFramesRapidly = flushFramesRapidly;
     }
 
     @Override
     public void open() throws HyracksDataException {
-        accessor = new FrameTupleAccessor(ctx.getFrameSize(), inputRecDesc);
-        writeBuffer = ctx.allocateFrame();
+        accessor = new FrameTupleAccessor(inputRecDesc);
         builder = new ArrayTupleBuilder(outputRecDesc.getFieldCount());
         builderData = builder.getFieldData();
-        appender = new FrameTupleAppender(ctx.getFrameSize());
-        appender.reset(writeBuffer, true);
+        appender = new FrameTupleAppender(new VSizeFrame(ctx), true);
         writer.open();
     }
 
@@ -83,24 +80,16 @@ public class BinaryTokenizerOperatorNodePushable extends AbstractUnaryInputUnary
 
         for (int i = 0; i < tupleCount; i++) {
             short numTokens = 0;
-            if (addNumTokensKey) {
-                // Run through the tokens to get the total number of tokens.
-                tokenizer.reset(
-                        accessor.getBuffer().array(),
-                        accessor.getTupleStartOffset(i) + accessor.getFieldSlotsLength()
-                                + accessor.getFieldStartOffset(i, docField), accessor.getFieldLength(i, docField));
-                while (tokenizer.hasNext()) {
-                    for (int j = 0; j < numTokensPerOutputRecord; j++) {
-                        tokenizer.next();
-                        numTokens++;
-                    }
-                }
-            }
 
             tokenizer.reset(
                     accessor.getBuffer().array(),
                     accessor.getTupleStartOffset(i) + accessor.getFieldSlotsLength()
                             + accessor.getFieldStartOffset(i, docField), accessor.getFieldLength(i, docField));
+
+            if (addNumTokensKey) {
+                // Get the total number of tokens.
+                numTokens = (short) (numTokensPerOutputRecord > 1 ? tokenizer.getTokensCount() * numTokensPerOutputRecord : tokenizer.getTokensCount());
+            }
 
             // Write token and data into frame by following the order specified
             // in the writeKeyFieldsFirst field.
@@ -158,30 +147,20 @@ public class BinaryTokenizerOperatorNodePushable extends AbstractUnaryInputUnary
 
                 }
 
-                if (!appender.append(builder.getFieldEndOffsets(), builder.getByteArray(), 0, builder.getSize())) {
-                    FrameUtils.flushFrame(writeBuffer, writer);
-                    appender.reset(writeBuffer, true);
-
-                    if (!appender.append(builder.getFieldEndOffsets(), builder.getByteArray(), 0, builder.getSize())) {
-                        throw new HyracksDataException("Record size (" + builder.getSize()
-                                + ") larger than frame size (" + appender.getBuffer().capacity() + ")");
-                    }
-                }
+                FrameUtils.appendToWriter(writer, appender, builder.getFieldEndOffsets(), builder.getByteArray(), 0,
+                        builder.getSize());
 
             }//end while
         }//end for
         
-        if (flushFramesRapidly && appender.getTupleCount() > 0) {
-            FrameUtils.flushFrame(writeBuffer, writer);
-            appender.reset(writeBuffer, true);
+        if (flushFramesRapidly) {
+        	appender.flush(writer, true);
         }
     }
 
     @Override
     public void close() throws HyracksDataException {
-        if (appender.getTupleCount() > 0) {
-            FrameUtils.flushFrame(writeBuffer, writer);
-        }
+        appender.flush(writer, true);
         writer.close();
     }
 

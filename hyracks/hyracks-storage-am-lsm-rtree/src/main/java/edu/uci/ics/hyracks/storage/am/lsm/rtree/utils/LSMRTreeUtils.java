@@ -75,7 +75,7 @@ public class LSMRTreeUtils {
             ILSMIOOperationScheduler ioScheduler, ILSMIOOperationCallback ioOpCallback,
             ILinearizeComparatorFactory linearizeCmpFactory, int[] rtreeFields, int[] buddyBTreeFields,
             ITypeTraits[] filterTypeTraits, IBinaryComparatorFactory[] filterCmpFactories, int[] filterFields,
-            boolean isPointMBR) throws TreeIndexException {
+            boolean durable, boolean isPointMBR) throws TreeIndexException {
 
         int valueFieldCount = buddyBTreeFields.length;
         int keyFieldCount = typeTraits.length - valueFieldCount;
@@ -142,7 +142,7 @@ public class LSMRTreeUtils {
                 bloomFilterFactory, filterFactory, filterFrameFactory, filterManager, bloomFilterFalsePositiveRate,
                 diskFileMapProvider, typeTraits.length, rtreeCmpFactories, btreeCmpFactories, linearizeCmpFactory,
                 comparatorFields, linearizerArray, mergePolicy, opTracker, ioScheduler, ioOpCallback, rtreeFields,
-                buddyBTreeFields, filterFields, isPointMBR);
+                buddyBTreeFields, filterFields, durable, isPointMBR);
         return lsmTree;
     }
 
@@ -154,7 +154,7 @@ public class LSMRTreeUtils {
             ILSMMergePolicy mergePolicy, ILSMOperationTracker opTracker, ILSMIOOperationScheduler ioScheduler,
             ILSMIOOperationCallback ioOpCallback, ILinearizeComparatorFactory linearizerCmpFactory, int[] rtreeFields,
             ITypeTraits[] filterTypeTraits, IBinaryComparatorFactory[] filterCmpFactories, int[] filterFields,
-            boolean isPointMBR) throws TreeIndexException {
+	boolean durable, boolean isPointMBR) throws TreeIndexException {
         ITreeIndexTupleWriterFactory rtreeInteriorFrameTupleWriterFactory = new LSMRTreeTupleWriterFactory(typeTraits,
                 false);
         ITreeIndexTupleWriterFactory rtreeLeafFrameTupleWriterFactory = null;
@@ -230,7 +230,7 @@ public class LSMRTreeUtils {
                 fileNameManager, diskRTreeFactory, bulkLoadRTreeFactory, filterFactory, filterFrameFactory,
                 filterManager, diskFileMapProvider, typeTraits.length, rtreeCmpFactories, btreeCmpFactories,
                 linearizerCmpFactory, comparatorFields, linearizerArray, mergePolicy, opTracker, ioScheduler,
-                ioOpCallback, rtreeFields, filterFields, isPointMBR);
+                ioOpCallback, rtreeFields, filterFields, durable, isPointMBR);
         return lsmTree;
     }
 
@@ -241,7 +241,7 @@ public class LSMRTreeUtils {
             double bloomFilterFalsePositiveRate, ILSMMergePolicy mergePolicy, ILSMOperationTracker opTracker,
             ILSMIOOperationScheduler ioScheduler, ILSMIOOperationCallback ioOpCallback,
             ILinearizeComparatorFactory linearizeCmpFactory, int[] buddyBTreeFields, int startWithVersion,
-            boolean isPointMBR) throws TreeIndexException {
+			boolean durable, boolean isPointMBR) throws TreeIndexException {
 
         int keyFieldCount = rtreeCmpFactories.length;
         int valueFieldCount = typeTraits.length - keyFieldCount;
@@ -296,7 +296,7 @@ public class LSMRTreeUtils {
                 btreeInteriorFrameFactory, btreeLeafFrameFactory, fileNameManager, diskRTreeFactory, diskBTreeFactory,
                 bloomFilterFactory, bloomFilterFalsePositiveRate, diskFileMapProvider, typeTraits.length,
                 rtreeCmpFactories, btreeCmpFactories, linearizeCmpFactory, comparatorFields, linearizerArray,
-                mergePolicy, opTracker, ioScheduler, ioOpCallback, buddyBTreeFields, startWithVersion, isPointMBR);
+                mergePolicy, opTracker, ioScheduler, ioOpCallback, buddyBTreeFields, startWithVersion, durable, isPointMBR);
         return lsmTree;
     }
 

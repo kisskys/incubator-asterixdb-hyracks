@@ -50,9 +50,10 @@ public class LSMRTreeWithAntiMatterTuplesDataflowHelperFactory extends AbstractL
             Map<String, String> mergePolicyProperties, ILSMOperationTrackerProvider opTrackerFactory,
             ILSMIOOperationSchedulerProvider ioSchedulerProvider, ILSMIOOperationCallbackFactory ioOpCallbackFactory,
             ILinearizeComparatorFactory linearizeCmpFactory, int[] rtreeFields, ITypeTraits[] filterTypeTraits,
-            IBinaryComparatorFactory[] filterCmpFactories, int[] filterFields, boolean isPointMBR) {
+            IBinaryComparatorFactory[] filterCmpFactories, int[] filterFields, boolean durable, boolean isPointMBR) {
         super(virtualBufferCacheProvider, mergePolicyFactory, mergePolicyProperties, opTrackerFactory,
-                ioSchedulerProvider, ioOpCallbackFactory, 1.0, filterTypeTraits, filterCmpFactories, filterFields);
+                ioSchedulerProvider, ioOpCallbackFactory, 1.0, filterTypeTraits, filterCmpFactories, filterFields,
+                durable);
         this.btreeComparatorFactories = btreeComparatorFactories;
         this.valueProviderFactories = valueProviderFactories;
         this.rtreePolicyType = rtreePolicyType;
@@ -68,6 +69,6 @@ public class LSMRTreeWithAntiMatterTuplesDataflowHelperFactory extends AbstractL
                 virtualBufferCacheProvider.getVirtualBufferCaches(ctx), btreeComparatorFactories,
                 valueProviderFactories, rtreePolicyType, mergePolicyFactory.createMergePolicy(mergePolicyProperties,
                         ctx), opTrackerFactory, ioSchedulerProvider.getIOScheduler(ctx), ioOpCallbackFactory,
-                linearizeCmpFactory, rtreeFields, filterTypeTraits, filterCmpFactories, filterFields, isPointMBR);
+                linearizeCmpFactory, rtreeFields, filterTypeTraits, filterCmpFactories, filterFields, durable, isPointMBR);
     }
 }

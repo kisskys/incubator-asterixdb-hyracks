@@ -16,13 +16,15 @@
 package edu.uci.ics.hyracks.storage.am.lsm.rtree.impls;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import edu.uci.ics.hyracks.api.dataflow.value.IBinaryComparatorFactory;
 import edu.uci.ics.hyracks.api.dataflow.value.ILinearizeComparatorFactory;
 import edu.uci.ics.hyracks.api.exceptions.HyracksDataException;
+import edu.uci.ics.hyracks.data.std.primitive.IntegerPointable;
 import edu.uci.ics.hyracks.dataflow.common.data.accessors.ITupleReference;
-import edu.uci.ics.hyracks.dataflow.common.data.marshalling.IntegerSerializerDeserializer;
 import edu.uci.ics.hyracks.storage.am.bloomfilter.impls.BloomCalculations;
 import edu.uci.ics.hyracks.storage.am.bloomfilter.impls.BloomFilter;
 import edu.uci.ics.hyracks.storage.am.bloomfilter.impls.BloomFilterFactory;
@@ -83,16 +85,16 @@ public class LSMRTree extends AbstractLSMRTree {
             IBinaryComparatorFactory[] rtreeCmpFactories, IBinaryComparatorFactory[] btreeCmpFactories,
             ILinearizeComparatorFactory linearizer, int[] comparatorFields, IBinaryComparatorFactory[] linearizerArray,
             ILSMMergePolicy mergePolicy, ILSMOperationTracker opTracker, ILSMIOOperationScheduler ioScheduler,
-            ILSMIOOperationCallback ioOpCallback, int[] rtreeFields, int[] buddyBTreeFields, int[] filterFields, boolean isPointMBR) {
+            ILSMIOOperationCallback ioOpCallback, int[] rtreeFields, int[] buddyBTreeFields, int[] filterFields, boolean durable, boolean isPointMBR) {
         super(virtualBufferCaches, rtreeInteriorFrameFactory, rtreeLeafFrameFactory, btreeInteriorFrameFactory,
                 btreeLeafFrameFactory, fileNameManager, new LSMRTreeDiskComponentFactory(diskRTreeFactory,
                         diskBTreeFactory, bloomFilterFactory, filterFactory), diskFileMapProvider, fieldCount,
                 rtreeCmpFactories, btreeCmpFactories, linearizer, comparatorFields, linearizerArray,
                 bloomFilterFalsePositiveRate, mergePolicy, opTracker, ioScheduler, ioOpCallback, filterFactory,
-                filterFrameFactory, filterManager, rtreeFields, filterFields, isPointMBR);
+                filterFrameFactory, filterManager, rtreeFields, filterFields, durable, isPointMBR);
         this.buddyBTreeFields = buddyBTreeFields;
     }
-    
+
     /*
      * For External indexes with no memory components
      */
@@ -104,12 +106,12 @@ public class LSMRTree extends AbstractLSMRTree {
             IBinaryComparatorFactory[] rtreeCmpFactories, IBinaryComparatorFactory[] btreeCmpFactories,
             ILinearizeComparatorFactory linearizer, int[] comparatorFields, IBinaryComparatorFactory[] linearizerArray,
             ILSMMergePolicy mergePolicy, ILSMOperationTracker opTracker, ILSMIOOperationScheduler ioScheduler,
-            ILSMIOOperationCallback ioOpCallback, int[] buddyBTreeFields, boolean isPointMBR) {
+            ILSMIOOperationCallback ioOpCallback, int[] buddyBTreeFields, boolean durable, boolean isPointMBR) {
         super(rtreeInteriorFrameFactory, rtreeLeafFrameFactory, btreeInteriorFrameFactory, btreeLeafFrameFactory,
                 fileNameManager, new LSMRTreeDiskComponentFactory(diskRTreeFactory, diskBTreeFactory,
                         bloomFilterFactory, null), diskFileMapProvider, fieldCount, rtreeCmpFactories, btreeCmpFactories,
                 linearizer, comparatorFields, linearizerArray, bloomFilterFalsePositiveRate, mergePolicy, opTracker,
-                ioScheduler, ioOpCallback, isPointMBR);
+                ioScheduler, ioOpCallback, durable, isPointMBR);
         this.buddyBTreeFields = buddyBTreeFields;
     }
 
@@ -277,8 +279,7 @@ public class LSMRTree extends AbstractLSMRTree {
             while (btreeCountingCursor.hasNext()) {
                 btreeCountingCursor.next();
                 ITupleReference countTuple = btreeCountingCursor.getTuple();
-                numBTreeTuples = IntegerSerializerDeserializer.getInt(countTuple.getFieldData(0),
-                        countTuple.getFieldStart(0));
+                numBTreeTuples = IntegerPointable.getInteger(countTuple.getFieldData(0), countTuple.getFieldStart(0));
             }
         } finally {
             btreeCountingCursor.close();
@@ -619,4 +620,18 @@ public class LSMRTree extends AbstractLSMRTree {
         forceFlushDirtyPages(component.getBTree());
         markAsValidInternal(component.getBTree());
     }
+
+    @Override
+    public Set<String> getLSMComponentPhysicalFiles(ILSMComponent lsmComponent) {
+        Set<String> files = new HashSet<String>();
+
+        LSMRTreeDiskComponent component = (LSMRTreeDiskComponent) lsmComponent;
+
+        files.add(component.getBTree().getFileReference().toString());
+        files.add(component.getRTree().getFileReference().toString());
+        files.add(component.getBloomFilter().getFileReference().toString());
+
+        return files;
+    }
+
 }

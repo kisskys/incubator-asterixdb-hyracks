@@ -16,7 +16,9 @@
 package edu.uci.ics.hyracks.storage.am.lsm.rtree.impls;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import edu.uci.ics.hyracks.api.dataflow.value.IBinaryComparatorFactory;
 import edu.uci.ics.hyracks.api.dataflow.value.ILinearizeComparatorFactory;
@@ -77,12 +79,12 @@ public class LSMRTreeWithAntiMatterTuples extends AbstractLSMRTree {
             IBinaryComparatorFactory[] btreeCmpFactories, ILinearizeComparatorFactory linearizer,
             int[] comparatorFields, IBinaryComparatorFactory[] linearizerArray, ILSMMergePolicy mergePolicy,
             ILSMOperationTracker opTracker, ILSMIOOperationScheduler ioScheduler, ILSMIOOperationCallback ioOpCallback,
-            int[] rtreeFields, int[] filterFields, boolean isPointMBR) {
+            int[] rtreeFields, int[] filterFields, boolean durable, boolean isPointMBR) {
         super(virtualBufferCaches, rtreeInteriorFrameFactory, rtreeLeafFrameFactory, btreeInteriorFrameFactory,
                 btreeLeafFrameFactory, fileManager, new LSMRTreeWithAntiMatterTuplesDiskComponentFactory(
                         diskRTreeFactory, filterFactory), diskFileMapProvider, fieldCount, rtreeCmpFactories,
                 btreeCmpFactories, linearizer, comparatorFields, linearizerArray, 0, mergePolicy, opTracker,
-                ioScheduler, ioOpCallback, filterFactory, filterFrameFactory, filterManager, rtreeFields, filterFields, isPointMBR);
+                ioScheduler, ioOpCallback, filterFactory, filterFrameFactory, filterManager, rtreeFields, filterFields, durable, isPointMBR);
         bulkLoaComponentFactory = new LSMRTreeWithAntiMatterTuplesDiskComponentFactory(bulkLoadRTreeFactory,
                 filterFactory);
     }
@@ -116,7 +118,7 @@ public class LSMRTreeWithAntiMatterTuples extends AbstractLSMRTree {
         super.deactivate(flushOnExit);
         List<ILSMComponent> immutableComponents = diskComponents;
         for (ILSMComponent c : immutableComponents) {
-            RTree rtree = (RTree) ((LSMRTreeDiskComponent) c).getRTree();
+            RTree rtree = ((LSMRTreeDiskComponent) c).getRTree();
             rtree.deactivate();
         }
         isActivated = false;
@@ -132,7 +134,7 @@ public class LSMRTreeWithAntiMatterTuples extends AbstractLSMRTree {
         super.destroy();
         List<ILSMComponent> immutableComponents = diskComponents;
         for (ILSMComponent c : immutableComponents) {
-            RTree rtree = (RTree) ((LSMRTreeDiskComponent) c).getRTree();
+            RTree rtree = ((LSMRTreeDiskComponent) c).getRTree();
             rtree.destroy();
         }
         fileManager.deleteDirs();
@@ -143,7 +145,7 @@ public class LSMRTreeWithAntiMatterTuples extends AbstractLSMRTree {
         super.clear();
         List<ILSMComponent> immutableComponents = diskComponents;
         for (ILSMComponent c : immutableComponents) {
-            RTree rtree = (RTree) ((LSMRTreeDiskComponent) c).getRTree();
+            RTree rtree = ((LSMRTreeDiskComponent) c).getRTree();
             rtree.deactivate();
             rtree.destroy();
         }
@@ -447,4 +449,15 @@ public class LSMRTreeWithAntiMatterTuples extends AbstractLSMRTree {
         forceFlushDirtyPages(rtree);
         markAsValidInternal(rtree);
     }
+
+    @Override
+    public Set<String> getLSMComponentPhysicalFiles(ILSMComponent lsmComponent) {
+        Set<String> files = new HashSet<String>();
+
+        RTree rtree = ((LSMRTreeDiskComponent) lsmComponent).getRTree();
+        files.add(rtree.getFileReference().toString());
+
+        return files;
+    }
+
 }

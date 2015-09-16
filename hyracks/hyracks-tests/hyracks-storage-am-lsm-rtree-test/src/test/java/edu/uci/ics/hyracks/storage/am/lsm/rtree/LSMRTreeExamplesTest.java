@@ -48,7 +48,7 @@ public class LSMRTreeExamplesTest extends AbstractLSMRTreeExamplesTest {
                 harness.getMergePolicy(), harness.getOperationTracker(), harness.getIOScheduler(),
                 harness.getIOOperationCallback(),
                 LSMRTreeUtils.proposeBestLinearizer(typeTraits, rtreeCmpFactories.length), rtreeFields, btreeFields,
-                filterTypeTraits, filterCmpFactories, filterFields, false);
+                filterTypeTraits, filterCmpFactories, filterFields, true, false);
     }
 
     @Before

@@ -3,9 +3,9 @@
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * you may obtain a copy of the License from
- * 
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -87,6 +87,9 @@ public class ClockPageReplacementStrategy implements IPageReplacementStrategy {
                     return cPage;
                 }
             }
+            /**
+             * The clockPtr may miss the last added pages in this round.
+             */
             clockPtr = (clockPtr + 1) % getNumPages();
             if (clockPtr == startClockPtr) {
                 ++cycleCount;
@@ -95,6 +98,10 @@ public class ClockPageReplacementStrategy implements IPageReplacementStrategy {
         return null;
     }
 
+    /**
+     * The number returned here could only be smaller or equal to the actual number
+     * of pages, because numPages is monotonically incremented.
+     */
     @Override
     public int getNumPages() {
         return numPages.get();
@@ -105,9 +112,8 @@ public class ClockPageReplacementStrategy implements IPageReplacementStrategy {
         synchronized (this) {
             cPage = new CachedPage(numPages.get(), allocator.allocate(pageSize, 1)[0], this);
             bufferCache.addPage(cPage);
-            numPages.incrementAndGet();    
+            numPages.incrementAndGet();
         }
-        
         AtomicBoolean accessedFlag = getPerPageObject(cPage);
         if (!accessedFlag.compareAndSet(true, false)) {
             if (cPage.pinIfGoodVictim()) {

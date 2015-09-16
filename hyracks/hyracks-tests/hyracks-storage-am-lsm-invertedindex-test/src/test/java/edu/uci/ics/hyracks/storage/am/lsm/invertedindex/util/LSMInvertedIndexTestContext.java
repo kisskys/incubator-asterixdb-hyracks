@@ -158,7 +158,7 @@ public class LSMInvertedIndexTestContext extends OrderedIndexTestContext {
                         harness.getBoomFilterFalsePositiveRate(), harness.getMergePolicy(),
                         harness.getOperationTracker(), harness.getIOScheduler(), harness.getIOOperationCallback(),
                         invertedIndexFields, filterTypeTraits, filterCmpFactories, filterFields,
-                        filterFieldsForNonBulkLoadOps, invertedIndexFieldsForNonBulkLoadOps);
+                        filterFieldsForNonBulkLoadOps, invertedIndexFieldsForNonBulkLoadOps, true);
                 break;
             }
             case PARTITIONED_LSM: {
@@ -168,7 +168,7 @@ public class LSMInvertedIndexTestContext extends OrderedIndexTestContext {
                         harness.getBoomFilterFalsePositiveRate(), harness.getMergePolicy(),
                         harness.getOperationTracker(), harness.getIOScheduler(), harness.getIOOperationCallback(),
                         invertedIndexFields, filterTypeTraits, filterCmpFactories, filterFields,
-                        filterFieldsForNonBulkLoadOps, invertedIndexFieldsForNonBulkLoadOps);
+                        filterFieldsForNonBulkLoadOps, invertedIndexFieldsForNonBulkLoadOps, true);
                 break;
             }
             default: {

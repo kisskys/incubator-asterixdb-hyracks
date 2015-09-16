@@ -49,12 +49,12 @@ public class TOccurrenceSearcher extends AbstractTOccurrenceSearcher {
     private void toccurenceSearch(OnDiskInvertedIndexSearchCursor resultCursor, InvertedIndexSearchPredicate searchPred,
             IIndexOperationContext ictx) throws HyracksDataException, IndexException {
         tokenizeQuery(searchPred);
-        int numQueryTokens = queryTokenAccessor.getTupleCount();
+        int numQueryTokens = queryTokenAppender.getTupleCount();
 
         invListCursors.clear();
         invListCursorCache.reset();
         for (int i = 0; i < numQueryTokens; i++) {
-            searchKey.reset(queryTokenAccessor, i);
+            searchKey.reset(queryTokenAppender, i);
             IInvertedListCursor invListCursor = invListCursorCache.getNext();
             invIndex.openInvertedListCursor(invListCursor, searchKey, ictx);
             invListCursors.add(invListCursor);
@@ -74,13 +74,13 @@ public class TOccurrenceSearcher extends AbstractTOccurrenceSearcher {
     private void disjunctiveSearch(OnDiskInvertedIndexSearchCursor resultCursor, InvertedIndexSearchPredicate searchPred,
             IIndexOperationContext ictx) throws HyracksDataException, IndexException {
         tokenizeQuery(searchPred);
-        int numQueryTokens = queryTokenAccessor.getTupleCount();
+        int numQueryTokens = queryTokenAppender.getTupleCount();
         IInvertedListCursor invListCursor = invListCursorFactory.create();
         ITupleReference invListTuple = null;
 
         searchResult.reset();
         for (int i = 0; i < numQueryTokens; i++) {
-            searchKey.reset(queryTokenAccessor, i);
+            searchKey.reset(queryTokenAppender, i);
             invIndex.openInvertedListCursor(invListCursor, searchKey, ictx);
             invListCursor.pinPages();
             try {
