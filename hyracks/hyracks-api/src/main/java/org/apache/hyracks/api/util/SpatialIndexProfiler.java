@@ -25,6 +25,7 @@ import java.net.UnknownHostException;
 public class SpatialIndexProfiler {
     public static final SpatialIndexProfiler INSTANCE = new SpatialIndexProfiler();
     public static final String PROFILE_HOME_DIR = "/data/seok.kim/spatial-index-experiment/asterix-instance/logs/";
+    //    public static final String PROFILE_HOME_DIR = "/Volumes/MyPassport/workspace/spatial-index-experiment/asterix-instance/logs/";
     public ExperimentProfiler falsePositivePerQuery;
     public ExperimentProfiler cacheMissPerQuery;
 

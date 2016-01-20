@@ -174,16 +174,14 @@ public abstract class IndexSearchOperatorNodePushable extends AbstractUnaryInput
             // Initialize the counter for this runtime instance
             OperatorExecutionTimeProfiler.INSTANCE.executionTimeProfiler.add(nodeJobSignature, taskId,
                     ExecutionTimeProfiler.INIT, false);
-            indexType = searchPred.applicableIndexType();
 
-            // Check whether we are dealing with the primary index or secondary index
-            if (indexType.equals("BTREE_INDEX")) {
-                if (!indexHelper.needKeyDuplicateCheck()) {
-                    indexType = "BTREE_PRIMARY_INDEX";
-                } else {
-                    indexType = "BTREE_SECONDARY_INDEX";
-                }
-            }
+            //append index name to index type 
+            String indexName = indexHelper.getIndexInstance().toString();
+            int beginIndex = indexName.indexOf("_idx_") + 5;
+            int endIndex = indexName.indexOf("/device_id");
+            indexName = indexName.substring(beginIndex, endIndex);
+
+            indexType = searchPred.applicableIndexType() + "@" + indexName;
         }
 
         accessor = new FrameTupleAccessor(inputRecDesc);
@@ -368,12 +366,11 @@ public abstract class IndexSearchOperatorNodePushable extends AbstractUnaryInput
             if (ExecutionTimeProfiler.PROFILE_MODE) {
                 profilerSW.finish();
 
-                OperatorExecutionTimeProfiler.INSTANCE.executionTimeProfiler.add(
-                        nodeJobSignature,
-                        taskId,
-                        profilerSW.getMessage(searchPred.applicableIndexType() + "_SEARCH\t" + ctx.getTaskAttemptId()
-                                + "\t" + this.toString(), profilerSW.getStartTimeStamp()), false);
-                SpatialIndexProfiler.INSTANCE.cacheMissPerQuery.add("" + profilerCacheMissTotalPerQuery + "\n");
+                OperatorExecutionTimeProfiler.INSTANCE.executionTimeProfiler.add(nodeJobSignature, taskId, profilerSW
+                        .getMessage(indexType + "_SEARCH\t" + ctx.getTaskAttemptId() + "\t" + this.toString(),
+                                profilerSW.getStartTimeStamp()), false);
+                SpatialIndexProfiler.INSTANCE.cacheMissPerQuery.add(indexType + "," + profilerCacheMissTotalPerQuery
+                        + "\n");
             }
         } finally {
             indexHelper.close();

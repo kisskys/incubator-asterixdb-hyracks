@@ -224,12 +224,10 @@ public class StreamSelectRuntimeFactory extends AbstractOneInputOneOutputRuntime
                 }
 
                 if (ExperimentProfiler.PROFILE_MODE) {
-                    if (inputTupleCount > 0) {
-                        SpatialIndexProfiler.INSTANCE.falsePositivePerQuery.add(""
-                                + (inputTupleCount - outputTupleCount) + "\n");
-                        inputTupleCount = 0;
-                        outputTupleCount = 0;
-                    }
+                    SpatialIndexProfiler.INSTANCE.falsePositivePerQuery.add("" + (inputTupleCount - outputTupleCount)
+                            + "," + inputTupleCount + "," + outputTupleCount + "\n");
+                    inputTupleCount = 0;
+                    outputTupleCount = 0;
                 }
 
             }
