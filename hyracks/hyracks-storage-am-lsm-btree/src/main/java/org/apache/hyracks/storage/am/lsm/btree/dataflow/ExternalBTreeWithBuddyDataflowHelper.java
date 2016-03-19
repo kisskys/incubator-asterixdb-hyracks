@@ -35,6 +35,7 @@ public class ExternalBTreeWithBuddyDataflowHelper extends AbstractLSMIndexDatafl
 
     private final int[] buddyBtreeFields;
     private final int version;
+    private final IBinaryTokenizerFactory tokenizerFactory;
 
     public ExternalBTreeWithBuddyDataflowHelper(IIndexOperatorDescriptor opDesc, IHyracksTaskContext ctx,
             int partition, ILSMMergePolicy mergePolicy, ILSMOperationTrackerProvider opTrackerFactory,
@@ -44,17 +45,19 @@ public class ExternalBTreeWithBuddyDataflowHelper extends AbstractLSMIndexDatafl
                 null, null, durable);
         this.buddyBtreeFields = buddyBtreeFields;
         this.version = version;
+        this.tokenizerFactory = tokenizerFactory;
     }
 
     public ExternalBTreeWithBuddyDataflowHelper(IIndexOperatorDescriptor opDesc, IHyracksTaskContext ctx,
             int partition, double bloomFilterFalsePositiveRate, ILSMMergePolicy mergePolicy,
             ILSMOperationTrackerProvider opTrackerFactory, ILSMIOOperationScheduler ioScheduler,
             ILSMIOOperationCallbackFactory ioOpCallbackFactory, int[] buddyBtreeFields, int version,
-            boolean durable) {
+            IBinaryTokenizerFactory tokenizerFactory, boolean durable) {
         super(opDesc, ctx, partition, null, bloomFilterFalsePositiveRate, mergePolicy, opTrackerFactory, ioScheduler,
                 ioOpCallbackFactory, null, null, null, durable);
         this.buddyBtreeFields = buddyBtreeFields;
         this.version = version;
+        this.tokenizerFactory = tokenizerFactory;
     }
 
     @Override

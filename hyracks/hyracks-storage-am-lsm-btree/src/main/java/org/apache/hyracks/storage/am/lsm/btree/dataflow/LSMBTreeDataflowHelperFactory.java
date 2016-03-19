@@ -24,6 +24,7 @@ import java.util.Map;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.value.IBinaryComparatorFactory;
 import org.apache.hyracks.api.dataflow.value.ITypeTraits;
+import org.apache.hyracks.storage.am.common.api.IBinaryTokenizerFactory;
 import org.apache.hyracks.storage.am.common.dataflow.IIndexOperatorDescriptor;
 import org.apache.hyracks.storage.am.common.dataflow.IndexDataflowHelper;
 import org.apache.hyracks.storage.am.lsm.common.api.ILSMIOOperationCallbackFactory;
@@ -38,6 +39,21 @@ public class LSMBTreeDataflowHelperFactory extends AbstractLSMIndexDataflowHelpe
     private static final long serialVersionUID = 1L;
     private final boolean needKeyDupCheck;
     private final int[] btreeFields;
+    protected final IBinaryTokenizerFactory tokenizerFactory;
+
+    public LSMBTreeDataflowHelperFactory(IVirtualBufferCacheProvider virtualBufferCacheProvider,
+            ILSMMergePolicyFactory mergePolicyFactory, Map<String, String> mergePolicyProperties,
+            ILSMOperationTrackerProvider opTrackerFactory, ILSMIOOperationSchedulerProvider ioSchedulerProvider,
+            ILSMIOOperationCallbackFactory ioOpCallbackFactory, double bloomFilterFalsePositiveRate,
+            boolean needKeyDupCheck, ITypeTraits[] filterTypeTraits, IBinaryComparatorFactory[] filterCmpFactories,
+            int[] btreeFields, int[] filterFields, IBinaryTokenizerFactory tokenizerFactory, boolean durable) {
+        super(virtualBufferCacheProvider, mergePolicyFactory, mergePolicyProperties, opTrackerFactory,
+                ioSchedulerProvider, ioOpCallbackFactory, bloomFilterFalsePositiveRate, filterTypeTraits,
+                filterCmpFactories, filterFields, durable);
+        this.needKeyDupCheck = needKeyDupCheck;
+        this.btreeFields = btreeFields;
+        this.tokenizerFactory = tokenizerFactory;
+    }
 
     public LSMBTreeDataflowHelperFactory(IVirtualBufferCacheProvider virtualBufferCacheProvider,
             ILSMMergePolicyFactory mergePolicyFactory, Map<String, String> mergePolicyProperties,
@@ -50,6 +66,7 @@ public class LSMBTreeDataflowHelperFactory extends AbstractLSMIndexDataflowHelpe
                 filterCmpFactories, filterFields, durable);
         this.needKeyDupCheck = needKeyDupCheck;
         this.btreeFields = btreeFields;
+        this.tokenizerFactory = null;
     }
 
     @Override
@@ -59,6 +76,6 @@ public class LSMBTreeDataflowHelperFactory extends AbstractLSMIndexDataflowHelpe
                 virtualBufferCacheProvider.getVirtualBufferCaches(ctx), bloomFilterFalsePositiveRate,
                 mergePolicyFactory.createMergePolicy(mergePolicyProperties, ctx), opTrackerFactory,
                 ioSchedulerProvider.getIOScheduler(ctx), ioOpCallbackFactory, needKeyDupCheck, filterTypeTraits,
-                filterCmpFactories, btreeFields, filterFields, durable);
+                filterCmpFactories, btreeFields, filterFields, tokenizerFactory, durable);
     }
 }

@@ -40,6 +40,7 @@ import org.apache.hyracks.storage.am.btree.impls.BTree.BTreeAccessor;
 import org.apache.hyracks.storage.am.btree.impls.BTree.BTreeBulkLoader;
 import org.apache.hyracks.storage.am.btree.impls.BTreeRangeSearchCursor;
 import org.apache.hyracks.storage.am.btree.impls.RangePredicate;
+import org.apache.hyracks.storage.am.common.api.IBinaryTokenizerFactory;
 import org.apache.hyracks.storage.am.common.api.IFreePageManager;
 import org.apache.hyracks.storage.am.common.api.IIndexAccessor;
 import org.apache.hyracks.storage.am.common.api.IIndexBulkLoader;
@@ -111,7 +112,7 @@ public class LSMBTree extends AbstractLSMIndex implements ITreeIndex {
             IFileMapProvider diskFileMapProvider, int fieldCount, IBinaryComparatorFactory[] cmpFactories,
             ILSMMergePolicy mergePolicy, ILSMOperationTracker opTracker, ILSMIOOperationScheduler ioScheduler,
             ILSMIOOperationCallback ioOpCallback, boolean needKeyDupCheck, int[] btreeFields, int[] filterFields,
-            boolean durable) {
+            IBinaryTokenizerFactory tokenizerFactory, boolean durable) {
         super(virtualBufferCaches, diskBTreeFactory.getBufferCache(), fileManager, diskFileMapProvider,
                 bloomFilterFalsePositiveRate, mergePolicy, opTracker, ioScheduler, ioOpCallback, filterFrameFactory,
                 filterManager, filterFields, durable);
@@ -120,7 +121,8 @@ public class LSMBTree extends AbstractLSMIndex implements ITreeIndex {
             BTree btree = null;
             btree = new BTree(virtualBufferCache, virtualBufferCache.getFileMapProvider(), new VirtualFreePageManager(
                     virtualBufferCache.getNumPages()), interiorFrameFactory, insertLeafFrameFactory, cmpFactories,
-                    fieldCount, new FileReference(new File(fileManager.getBaseDir() + "_virtual_" + i)));
+                    fieldCount, new FileReference(new File(fileManager.getBaseDir() + "_virtual_" + i)),
+                    tokenizerFactory);
             LSMBTreeMemoryComponent mutableComponent = new LSMBTreeMemoryComponent(btree, virtualBufferCache,
                     i == 0 ? true : false, filterFactory == null ? null : filterFactory.createLSMComponentFilter());
             memoryComponents.add(mutableComponent);

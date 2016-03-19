@@ -41,6 +41,7 @@ import org.apache.hyracks.storage.am.btree.exceptions.BTreeException;
 import org.apache.hyracks.storage.am.btree.exceptions.BTreeNotUpdateableException;
 import org.apache.hyracks.storage.am.btree.frames.BTreeNSMInteriorFrame;
 import org.apache.hyracks.storage.am.btree.impls.BTreeOpContext.PageValidationInfo;
+import org.apache.hyracks.storage.am.common.api.IBinaryTokenizerFactory;
 import org.apache.hyracks.storage.am.common.api.IFreePageManager;
 import org.apache.hyracks.storage.am.common.api.IIndexAccessor;
 import org.apache.hyracks.storage.am.common.api.IIndexBulkLoader;
@@ -49,6 +50,7 @@ import org.apache.hyracks.storage.am.common.api.IModificationOperationCallback;
 import org.apache.hyracks.storage.am.common.api.ISearchOperationCallback;
 import org.apache.hyracks.storage.am.common.api.ISearchPredicate;
 import org.apache.hyracks.storage.am.common.api.ISplitKey;
+import org.apache.hyracks.storage.am.common.api.ITokenizingTupleIterator;
 import org.apache.hyracks.storage.am.common.api.ITreeIndexAccessor;
 import org.apache.hyracks.storage.am.common.api.ITreeIndexCursor;
 import org.apache.hyracks.storage.am.common.api.ITreeIndexFrame;
@@ -66,6 +68,7 @@ import org.apache.hyracks.storage.am.common.impls.NodeFrontier;
 import org.apache.hyracks.storage.am.common.impls.TreeIndexDiskOrderScanCursor;
 import org.apache.hyracks.storage.am.common.ophelpers.IndexOperation;
 import org.apache.hyracks.storage.am.common.ophelpers.MultiComparator;
+import org.apache.hyracks.storage.am.common.tokenizer.TokenizingTupleIterator;
 import org.apache.hyracks.storage.common.buffercache.IBufferCache;
 import org.apache.hyracks.storage.common.buffercache.ICachedPage;
 import org.apache.hyracks.storage.common.file.BufferedFileHandle;
@@ -82,10 +85,13 @@ public class BTree extends AbstractTreeIndex {
     private final AtomicInteger smoCounter;
     private final ReadWriteLock treeLatch;
     private final int maxTupleSize;
+    private final IBinaryTokenizerFactory tokenizerFactory;
+    private final ITokenizingTupleIterator tokenTupleIter;
 
     public BTree(IBufferCache bufferCache, IFileMapProvider fileMapProvider, IFreePageManager freePageManager,
             ITreeIndexFrameFactory interiorFrameFactory, ITreeIndexFrameFactory leafFrameFactory,
-            IBinaryComparatorFactory[] cmpFactories, int fieldCount, FileReference file) {
+            IBinaryComparatorFactory[] cmpFactories, int fieldCount, FileReference file,
+            IBinaryTokenizerFactory tokenizerFactory) {
         super(bufferCache, fileMapProvider, freePageManager, interiorFrameFactory, leafFrameFactory, cmpFactories,
                 fieldCount, file);
         this.treeLatch = new ReentrantReadWriteLock(true);
@@ -94,6 +100,20 @@ public class BTree extends AbstractTreeIndex {
         ITreeIndexFrame interiorFrame = interiorFrameFactory.createFrame();
         maxTupleSize = Math.min(leafFrame.getMaxTupleSize(bufferCache.getPageSize()),
                 interiorFrame.getMaxTupleSize(bufferCache.getPageSize()));
+        this.tokenizerFactory = tokenizerFactory;
+        if (tokenizerFactory != null) {
+            //The number of secondary key fields in Static Hilbert BTree is always 1
+            this.tokenTupleIter = new TokenizingTupleIterator(1, fieldCount - 1, tokenizerFactory.createTokenizer());
+        } else {
+            this.tokenTupleIter = null;
+        }
+    }
+
+    public BTree(IBufferCache bufferCache, IFileMapProvider fileMapProvider, IFreePageManager freePageManager,
+            ITreeIndexFrameFactory interiorFrameFactory, ITreeIndexFrameFactory leafFrameFactory,
+            IBinaryComparatorFactory[] cmpFactories, int fieldCount, FileReference file) {
+        this(bufferCache, fileMapProvider, freePageManager, interiorFrameFactory, leafFrameFactory, cmpFactories,
+                fieldCount, file, null);
     }
 
     private void diskOrderScan(ITreeIndexCursor icursor, BTreeOpContext ctx) throws HyracksDataException {
@@ -874,76 +894,76 @@ public class BTree extends AbstractTreeIndex {
         @Override
         public void insert(ITupleReference tuple) throws HyracksDataException, TreeIndexException {
             ctx.setOperation(IndexOperation.INSERT);
-            //            if (tokenizerFactory == null) {
-            btree.insert(tuple, ctx);
-            //            } else {
-            //                tokenTupleIter.reset(tuple);
-            //                while (tokenTupleIter.hasNext()) {
-            //                    tokenTupleIter.next();
-            //                    ITupleReference tokenTuple = tokenTupleIter.getTuple();
-            //                    btree.insert(tokenTuple, ctx);
-            //                }
-            //            }
+            if (tokenizerFactory == null) {
+                btree.insert(tuple, ctx);
+            } else {
+                tokenTupleIter.reset(tuple);
+                while (tokenTupleIter.hasNext()) {
+                    tokenTupleIter.next();
+                    ITupleReference tokenTuple = tokenTupleIter.getTuple();
+                    btree.insert(tokenTuple, ctx);
+                }
+            }
         }
 
         @Override
         public void update(ITupleReference tuple) throws HyracksDataException, TreeIndexException {
             ctx.setOperation(IndexOperation.UPDATE);
-            //            if (tokenizerFactory == null) {
-            btree.update(tuple, ctx);
-            //            } else {
-            //                tokenTupleIter.reset(tuple);
-            //                while (tokenTupleIter.hasNext()) {
-            //                    tokenTupleIter.next();
-            //                    ITupleReference tokenTuple = tokenTupleIter.getTuple();
-            //                    btree.update(tokenTuple, ctx);
-            //                }
-            //            }
+            if (tokenizerFactory == null) {
+                btree.update(tuple, ctx);
+            } else {
+                tokenTupleIter.reset(tuple);
+                while (tokenTupleIter.hasNext()) {
+                    tokenTupleIter.next();
+                    ITupleReference tokenTuple = tokenTupleIter.getTuple();
+                    btree.update(tokenTuple, ctx);
+                }
+            }
         }
 
         @Override
         public void delete(ITupleReference tuple) throws HyracksDataException, TreeIndexException {
             ctx.setOperation(IndexOperation.DELETE);
-            //            if (tokenizerFactory == null) {
-            btree.delete(tuple, ctx);
-            //            } else {
-            //                tokenTupleIter.reset(tuple);
-            //                while (tokenTupleIter.hasNext()) {
-            //                    tokenTupleIter.next();
-            //                    ITupleReference tokenTuple = tokenTupleIter.getTuple();
-            //                    btree.delete(tokenTuple, ctx);
-            //                }
-            //            }
+            if (tokenizerFactory == null) {
+                btree.delete(tuple, ctx);
+            } else {
+                tokenTupleIter.reset(tuple);
+                while (tokenTupleIter.hasNext()) {
+                    tokenTupleIter.next();
+                    ITupleReference tokenTuple = tokenTupleIter.getTuple();
+                    btree.delete(tokenTuple, ctx);
+                }
+            }
         }
 
         @Override
         public void upsert(ITupleReference tuple) throws HyracksDataException, TreeIndexException {
-            //            if (tokenizerFactory == null) {
-            upsertIfConditionElseInsert(tuple, UnconditionalTupleAcceptor.INSTANCE);
-            //            } else {
-            //                tokenTupleIter.reset(tuple);
-            //                while (tokenTupleIter.hasNext()) {
-            //                    tokenTupleIter.next();
-            //                    ITupleReference tokenTuple = tokenTupleIter.getTuple();
-            //                    upsertIfConditionElseInsert(tokenTuple, UnconditionalTupleAcceptor.INSTANCE);
-            //                }
-            //            }
+            if (tokenizerFactory == null) {
+                upsertIfConditionElseInsert(tuple, UnconditionalTupleAcceptor.INSTANCE);
+            } else {
+                tokenTupleIter.reset(tuple);
+                while (tokenTupleIter.hasNext()) {
+                    tokenTupleIter.next();
+                    ITupleReference tokenTuple = tokenTupleIter.getTuple();
+                    upsertIfConditionElseInsert(tokenTuple, UnconditionalTupleAcceptor.INSTANCE);
+                }
+            }
         }
 
         public void upsertIfConditionElseInsert(ITupleReference tuple, ITupleAcceptor acceptor)
                 throws HyracksDataException, TreeIndexException {
             ctx.setOperation(IndexOperation.UPSERT);
             ctx.acceptor = acceptor;
-            //            if (tokenizerFactory == null) {
-            btree.upsert(tuple, ctx);
-            //            } else {
-            //                tokenTupleIter.reset(tuple);
-            //                while (tokenTupleIter.hasNext()) {
-            //                    tokenTupleIter.next();
-            //                    ITupleReference tokenTuple = tokenTupleIter.getTuple();
-            //                    btree.upsert(tokenTuple, ctx);
-            //                }
-            //            }
+            if (tokenizerFactory == null) {
+                btree.upsert(tuple, ctx);
+            } else {
+                tokenTupleIter.reset(tuple);
+                while (tokenTupleIter.hasNext()) {
+                    tokenTupleIter.next();
+                    ITupleReference tokenTuple = tokenTupleIter.getTuple();
+                    btree.upsert(tokenTuple, ctx);
+                }
+            }
         }
 
         @Override

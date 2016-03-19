@@ -44,7 +44,7 @@ public class ExternalBTreeDataflowHelper extends LSMBTreeDataflowHelper {
             ILSMIOOperationCallbackFactory ioOpCallbackFactory, boolean needKeyDupCheck, int version,
             IBinaryTokenizerFactory tokenizerFactory, boolean durable) {
         super(opDesc, ctx, partition, null, bloomFilterFalsePositiveRate, mergePolicy, opTrackerFactory, ioScheduler,
-                ioOpCallbackFactory, false, null, null, null, null, durable);
+                ioOpCallbackFactory, false, null, null, null, null, tokenizerFactory, durable);
         this.version = version;
     }
 

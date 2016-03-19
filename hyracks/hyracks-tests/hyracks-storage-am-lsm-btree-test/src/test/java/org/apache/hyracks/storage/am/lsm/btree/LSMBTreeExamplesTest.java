@@ -21,10 +21,6 @@ package org.apache.hyracks.storage.am.lsm.btree;
 
 import java.util.logging.Level;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import org.apache.hyracks.api.dataflow.value.IBinaryComparatorFactory;
 import org.apache.hyracks.api.dataflow.value.ISerializerDeserializer;
 import org.apache.hyracks.api.dataflow.value.ITypeTraits;
@@ -43,6 +39,9 @@ import org.apache.hyracks.storage.am.common.api.ITreeIndex;
 import org.apache.hyracks.storage.am.common.api.TreeIndexException;
 import org.apache.hyracks.storage.am.lsm.btree.util.LSMBTreeTestHarness;
 import org.apache.hyracks.storage.am.lsm.btree.util.LSMBTreeUtils;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 public class LSMBTreeExamplesTest extends OrderedIndexExamplesTest {
     private final LSMBTreeTestHarness harness = new LSMBTreeTestHarness();
@@ -55,7 +54,7 @@ public class LSMBTreeExamplesTest extends OrderedIndexExamplesTest {
                 harness.getDiskBufferCache(), harness.getDiskFileMapProvider(), typeTraits, cmpFactories,
                 bloomFilterKeyFields, harness.getBoomFilterFalsePositiveRate(), harness.getMergePolicy(),
                 harness.getOperationTracker(), harness.getIOScheduler(), harness.getIOOperationCallback(), true,
-                filterTypeTraits, filterCmpFactories, btreeFields, filterFields, true);
+                filterTypeTraits, filterCmpFactories, btreeFields, filterFields, null, true);
     }
 
     @Before

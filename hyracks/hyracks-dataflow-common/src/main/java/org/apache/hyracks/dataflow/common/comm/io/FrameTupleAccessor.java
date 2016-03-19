@@ -72,9 +72,8 @@ public class FrameTupleAccessor implements IFrameTupleAccessor {
 
     @Override
     public int getTupleStartOffset(int tupleIndex) {
-        int offset = tupleIndex == 0 ?
-                FrameConstants.TUPLE_START_OFFSET :
-                IntSerDeUtils.getInt(buffer.array(), tupleCountOffset - 4 * tupleIndex);
+        int offset = tupleIndex == 0 ? FrameConstants.TUPLE_START_OFFSET : IntSerDeUtils.getInt(buffer.array(),
+                tupleCountOffset - 4 * tupleIndex);
         return start + offset;
     }
 
@@ -85,16 +84,14 @@ public class FrameTupleAccessor implements IFrameTupleAccessor {
 
     @Override
     public int getTupleEndOffset(int tupleIndex) {
-        return start + IntSerDeUtils
-                .getInt(buffer.array(), tupleCountOffset - FrameConstants.SIZE_LEN * (tupleIndex + 1));
+        return start
+                + IntSerDeUtils.getInt(buffer.array(), tupleCountOffset - FrameConstants.SIZE_LEN * (tupleIndex + 1));
     }
 
     @Override
     public int getFieldStartOffset(int tupleIndex, int fIdx) {
-        return fIdx == 0 ?
-                0 :
-                IntSerDeUtils
-                        .getInt(buffer.array(), getTupleStartOffset(tupleIndex) + (fIdx - 1) * FrameConstants.SIZE_LEN);
+        return fIdx == 0 ? 0 : IntSerDeUtils.getInt(buffer.array(), getTupleStartOffset(tupleIndex) + (fIdx - 1)
+                * FrameConstants.SIZE_LEN);
     }
 
     @Override

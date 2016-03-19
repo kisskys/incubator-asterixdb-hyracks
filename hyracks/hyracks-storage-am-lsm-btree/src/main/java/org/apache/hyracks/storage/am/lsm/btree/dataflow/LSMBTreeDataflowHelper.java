@@ -41,6 +41,7 @@ public class LSMBTreeDataflowHelper extends AbstractLSMIndexDataflowHelper {
 
     private final boolean needKeyDupCheck;
     private final int[] btreeFields;
+    protected final IBinaryTokenizerFactory tokenizerFactory;
 
     public LSMBTreeDataflowHelper(IIndexOperatorDescriptor opDesc, IHyracksTaskContext ctx, int partition,
             List<IVirtualBufferCache> virtualBufferCaches, ILSMMergePolicy mergePolicy,
@@ -50,7 +51,7 @@ public class LSMBTreeDataflowHelper extends AbstractLSMIndexDataflowHelper {
             int[] filterFields, IBinaryTokenizerFactory tokenizerFactory, boolean durable) {
         this(opDesc, ctx, partition, virtualBufferCaches, DEFAULT_BLOOM_FILTER_FALSE_POSITIVE_RATE, mergePolicy,
                 opTrackerFactory, ioScheduler, ioOpCallbackFactory, needKeyDupCheck, filterTypeTraits,
-                filterCmpFactories, btreeFields, filterFields, durable);
+                filterCmpFactories, btreeFields, filterFields, tokenizerFactory, durable);
     }
 
     public LSMBTreeDataflowHelper(IIndexOperatorDescriptor opDesc, IHyracksTaskContext ctx, int partition,
@@ -58,11 +59,12 @@ public class LSMBTreeDataflowHelper extends AbstractLSMIndexDataflowHelper {
             ILSMMergePolicy mergePolicy, ILSMOperationTrackerProvider opTrackerFactory,
             ILSMIOOperationScheduler ioScheduler, ILSMIOOperationCallbackFactory ioOpCallbackFactory,
             boolean needKeyDupCheck, ITypeTraits[] filterTypeTraits, IBinaryComparatorFactory[] filterCmpFactories,
-            int[] btreeFields, int[] filterFields, boolean durable) {
+            int[] btreeFields, int[] filterFields, IBinaryTokenizerFactory tokenizerFactory, boolean durable) {
         super(opDesc, ctx, partition, virtualBufferCaches, bloomFilterFalsePositiveRate, mergePolicy, opTrackerFactory,
                 ioScheduler, ioOpCallbackFactory, filterTypeTraits, filterCmpFactories, filterFields, durable);
         this.needKeyDupCheck = needKeyDupCheck;
         this.btreeFields = btreeFields;
+        this.tokenizerFactory = tokenizerFactory;
     }
 
     @Override
@@ -73,7 +75,7 @@ public class LSMBTreeDataflowHelper extends AbstractLSMIndexDataflowHelper {
                 treeOpDesc.getTreeIndexComparatorFactories(), treeOpDesc.getTreeIndexBloomFilterKeyFields(),
                 bloomFilterFalsePositiveRate, mergePolicy, opTrackerFactory.getOperationTracker(ctx), ioScheduler,
                 ioOpCallbackFactory.createIOOperationCallback(), needKeyDupCheck, filterTypeTraits, filterCmpFactories,
-                btreeFields, filterFields, durable);
+                btreeFields, filterFields, tokenizerFactory, durable);
     }
 
     @Override
